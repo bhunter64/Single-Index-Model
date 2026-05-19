@@ -5,7 +5,7 @@
 #' @param gamma A vector of biomarker effects on individuals sensitvity
 #' @returns A data frame of time | status | trt | sensitivity | biomarker 1 | ... | biomarker n |
 #' @examples
-simudat <- function (n, beta, gamma, h0 = 1) {
+simudata <- function (n, beta, gamma, h0 = 1) {
   # Biomarker number implicitly determined by gamma length
   num_of_biomarkers <- length(gamma)
 
