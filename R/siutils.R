@@ -3,7 +3,6 @@
 #' @param biomarkers A data frame of row(i)=subjects_i, col(j)=biomarker_j.
 #' @param gamma A vector of biomarker effects on individuals sensitvity
 #' @returns Combined threshold value
-#' @examples
 cmb_biomarker <- function(biomarkers, gamma) {
   val <- (as.matrix(biomarkers, nrow = nrow(biomarkers), ncol = ncol(biomarkers)) %*% gamma) + 1
   return(val)
@@ -13,7 +12,6 @@ cmb_biomarker <- function(biomarkers, gamma) {
 #'
 #' @param x A data frame of study data (see format elsewhere)
 #' @returns Index where biomarkers are foubd
-#' @examples
 getBM_col <- function(x) {
   idx <- grep("bio", colnames(x))
   return(idx)
@@ -24,7 +22,6 @@ getBM_col <- function(x) {
 #' @param x A data frame with trt and biomarker values.
 #' @param gamma A vector of biomarker effects on individuals sensitvity
 #' @returns A data frame: trt | sensitivity | product of trt*sensitivity
-#' @examples
 thresholding <- function(x, gamma) {
   bm_idx <- getBM_col(x)
   w <- cmb_biomarker(x[,bm_idx], gamma)

@@ -2,7 +2,7 @@
 #'
 #' @param data A data frame: time | status | trt | sensitivity | biomarker 1 | ... | biomarker n |.
 #' @returns A list:
-#' @examples
+#' @examples summary_data(dat)
 summary_data <- function (data) {
   time <- data$time
   trt <- data$trt
