@@ -19,6 +19,3 @@ A data frame of time | status | trt | sensitivity | biomarker 1 | ... | biomarke
 \description{
 Simulate study data based on predetermined coefficients (beta, gamma)
 }
-\examples{
-simu_data(400, beta = c(log(3), log(2), log(4)), gamma = c(-1.8, -2, 0.9))
-}

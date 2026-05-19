@@ -4,7 +4,6 @@
 #' @param beta A vector of effects: 1-Trt & not sensitive. 2-Sensitive & no trt. 1+2+3-Sensitive & trt
 #' @param gamma A vector of biomarker effects on individuals sensitvity
 #' @returns A data frame of time | status | trt | sensitivity | biomarker 1 | ... | biomarker n |
-#' @examples simu_data(400, beta = c(log(3), log(2), log(4)), gamma = c(-1.8, -2, 0.9))
 simu_data <- function (n, beta, gamma, h0 = 1) {
   # Biomarker number implicitly determined by gamma length
   num_of_biomarkers <- length(gamma)

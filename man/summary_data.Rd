@@ -15,6 +15,3 @@ A list:
 \description{
 Summarize data
 }
-\examples{
-summary_data(dat)
-}

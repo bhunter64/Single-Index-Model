@@ -1,11 +1,10 @@
 Package: singleIndexModel
-Title: What the Package Does (One Line, Title Case)
+Title: Estimates Single Index for Separation of study groups using properietary model.
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Braydon", "Hunter", , "first.last@example.com", role = c("aut", "cre"))
+Description: Collection of functions to simulate biomarker data and primarily, to estimates Single Index for Separation of study groups using properietary model.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
