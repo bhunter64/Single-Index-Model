@@ -9,7 +9,7 @@ simu_data <- function (n, beta, gamma, h0 = 1) {
   num_of_biomarkers <- length(gamma)
 
   # Treatment simulation
-  x <- rbinom(n, 1, 0.5)
+  x <- stats::rbinom(n, 1, 0.5)
 
   # MVN Biomarker Simulation
   mean <- rep(0, num_of_biomarkers)
@@ -27,7 +27,7 @@ simu_data <- function (n, beta, gamma, h0 = 1) {
 
   # Hazard Calculation and Survival Simulation
   h <- h0 * exp(as.matrix(X) %*% beta)
-  stime <- rexp(n, h) # survival time ~ Exp(1/2 * exp(x beta))
+  stime <- stats::rexp(n, h) # survival time ~ Exp(1/2 * exp(x beta))
 
   # ——— OPTIONAL WEIBULL ALTERNATIVE———
   # survival time ~ Weibull(4, 1/2 * exp(x beta))
@@ -36,7 +36,7 @@ simu_data <- function (n, beta, gamma, h0 = 1) {
   #stime <- rweibull(n, a, hb) # weibull??
 
   # Simulates end of study period
-  endstudy <- runif(n, 0.05, 3)
+  endstudy <- stats::runif(n, 0.05, 3)
 
   # Sets Censoring Indicator
   cstatus <- ifelse(stime > endstudy, 0, 1)
