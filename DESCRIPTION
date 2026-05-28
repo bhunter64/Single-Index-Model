@@ -1,5 +1,5 @@
 Package: singleIndexModel
-Title: Estimates Single Index for Separation of study groups using properietary model.
+Title: Estimates Single Index for Separation of study groups using properietary model
 Version: 0.0.0.9000
 Authors@R: 
     person("Braydon", "Hunter", , "first.last@example.com", role = c("aut", "cre"))

@@ -52,7 +52,6 @@ mcmc_step <- function(x,
                       biomarker_cols = NULL) {
   x <- as.data.frame(x) # incase x is not passed as a data frame
   previous <- list(beta = beta, gamma = gamma)
-
   # Formula for logarithm of gamma posterior, current selection likelihood
   current_gamma_logpost <- cox_threshold_loglik(
     x,
@@ -65,7 +64,8 @@ mcmc_step <- function(x,
     log_gamma_prior(gamma, mean = control$gamma_mean, sd = control$gamma_sd) -
     lambda * sum(abs(gamma)) # penalty
 
-  candidate_gamma <- propose_gamma(gamma, proposal_sd = control$gamma_proposal_sd) # gamma proposal step (helper function)
+  # gamma proposal step (helper function)
+  candidate_gamma <- propose_gamma(gamma, proposal_sd = control$gamma_proposal_sd)
 
   # Formula for logarithm of gamma posterior, candidate selection likelihood
   candidate_gamma_logpost <- cox_threshold_loglik(
@@ -86,7 +86,7 @@ mcmc_step <- function(x,
 
   fit <- fit_threshold_cox(x, y, gamma, treatment_col, biomarker_cols)
 
-  # Same draws but for new gamma
+  # Formula for logarithm of beta posterior, current selection likelihood, using cox proportional hazard model
   beta_loglik <- cox_threshold_loglik(
     x,
     y,
@@ -95,7 +95,10 @@ mcmc_step <- function(x,
     treatment_col = treatment_col,
     biomarker_cols = biomarker_cols
   )
+
+  # Gives a beta candidate from the fit
   beta_candidate <- as.vector(mvtnorm::rmvnorm(1, beta, stats::vcov(fit)))
+  # Formula for logarithm of beta posterior, candidate likelihood, using cox proportional hazard model
   candidate_loglik <- cox_threshold_loglik(
     x,
     y,
@@ -228,7 +231,7 @@ fit_threshold_model <- function(data,
                                 gamma_start = NULL,
                                 time_col = "time",
                                 status_col = "status",
-                                treatment_col = "trt",
+                                treatment_col = "treatment",
                                 biomarker_cols = NULL) {
   data <- as.data.frame(data)
 

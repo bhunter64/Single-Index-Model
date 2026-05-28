@@ -25,8 +25,8 @@ cox_threshold_loglik <- function(x,
   )
 
   linear_predictor <- as.matrix(design) %*% beta
-  risk_sum <- log(cumsum(exp(linear_predictor)))
-  return(as.numeric(sum(y[, 2] * (linear_predictor - risk_sum))))
+  risk_cusum <- log(cumsum(exp(linear_predictor)))
+  return(as.numeric(sum(y[, 2] * (linear_predictor - risk_cusum))))
 }
 
 #' Fit the betas in the Cox model for a given gamma.
@@ -56,14 +56,19 @@ fit_threshold_cox <- function(x,
   # standard fit object for cox regression with an additional `converged` argument
   fit <- tryCatch(
     survival::coxph(
-      y ~ trt + subgroup + trt_subgroup,
+      y ~ treatment + subgroup + treatment_subgroup,
       data = design,
-      control = survival::coxph.control(iter.max = 50)
+      control = survival::coxph.control(iter.max = 1000), singular.ok = FALSE
     ),
     warning = function(w) w
   )
 
   if (inherits(fit, "warning")) {
+    warning(
+      "cox regression failed to converge on beta sampling: ",
+      conditionMessage(fit),
+      call. = FALSE
+    )
     fit$converged <- FALSE
   } else {
     fit$converged <- TRUE

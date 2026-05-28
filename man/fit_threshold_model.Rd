@@ -11,7 +11,7 @@ fit_threshold_model(
   gamma_start = NULL,
   time_col = "time",
   status_col = "status",
-  treatment_col = "trt",
+  treatment_col = "treatment",
   biomarker_cols = NULL
 )
 }

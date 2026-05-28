@@ -10,29 +10,28 @@ run_practicum_tests <- function() {
   set.seed(20260526)
 
   true_gamma <- c(0.75, 0.25)
-  true_beta <- c(0, 0, log(1.5))
+  true_beta <- c(log(3), log(1.2), log(2))
 
   data <- simulate_threshold_data(
-    n = 80,
+    n = 400,
     beta = true_beta,
     gamma = true_gamma,
     baseline_hazard = 1
   )
 
   control <- default_mcmc_control(
-    samples = 20,
-    burn_in = 10,
-    thin = 2,
-    gamma_mean = c(0.75, 0.25),
-    gamma_sd = 0.12,
+    samples = 500,
+    burn_in = 100,
+    thin = 1,
+    gamma_mean = c(0.7, 0.3),
+    gamma_sd = 0.1,
     gamma_proposal_sd = 0.04
   )
 
   posterior <- fit_threshold_model(
     data = data,
     control = control,
-    lambda = 0,
-    gamma_start = c(0.7, 0.3)
+    lambda = 0
   )
   summary <- summarize_mcmc(posterior)
 
