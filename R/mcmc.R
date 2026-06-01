@@ -94,27 +94,6 @@ mcmc_step <- function(x,
     }
   }
 
-
-  # # gamma proposal step (helper function)
-  # candidate_gamma <- propose_gamma(gamma, proposal_sd = control$gamma_proposal_sd)
-  #
-  # # Formula for logarithm of gamma posterior, candidate selection likelihood
-  # candidate_gamma_logpost <- cox_threshold_loglik(
-  #   x,
-  #   y,
-  #   beta,
-  #   candidate_gamma,
-  #   treatment_col = treatment_col,
-  #   biomarker_cols = biomarker_cols
-  # ) +
-  #   log_gamma_prior(candidate_gamma, mean = control$gamma_mean, sd = control$gamma_sd) -
-  #   lambda * sum(abs(candidate_gamma))
-
-  # Criterion for selection (symmetric gamma distribution allows for this formula)
-  # if (stats::runif(1) < exp(candidate_gamma_logpost - current_gamma_logpost)) {
-  #   gamma <- candidate_gamma
-  # }
-
   fit <- fit_threshold_cox(x, y, gamma, treatment_col, biomarker_cols)
 
   if (inherits(fit, "warning")) {
