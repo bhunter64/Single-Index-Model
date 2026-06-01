@@ -9,7 +9,7 @@
 run_practicum_tests <- function() {
   set.seed(20260526)
 
-  true_gamma <- c(0.75, 0.25)
+  true_gamma <- c(1.5, 1.8)
   true_beta <- c(log(3), log(1.2), log(2))
 
   data <- simulate_threshold_data(
@@ -19,13 +19,15 @@ run_practicum_tests <- function() {
     baseline_hazard = 1
   )
 
+  print(summarize_simulated_data(data, c(1.5, 1.8)))
+
   control <- default_mcmc_control(
-    samples = 500,
-    burn_in = 100,
+    samples = 5000,
+    burn_in = 10000,
     thin = 1,
-    gamma_mean = c(0.7, 0.3),
-    gamma_sd = 0.1,
-    gamma_proposal_sd = 0.04
+    gamma_mean = c(1, 1),
+    gamma_sd = 0.4,
+    gamma_proposal_sd = 2
   )
 
   posterior <- fit_threshold_model(
@@ -33,6 +35,9 @@ run_practicum_tests <- function() {
     control = control,
     lambda = 0
   )
+
+  # Are the gammas really independent?
+  print(cor(t(posterior$gamma_samples)))
   summary <- summarize_mcmc(posterior)
 
   stopifnot(

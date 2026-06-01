@@ -52,65 +52,93 @@ mcmc_step <- function(x,
                       biomarker_cols = NULL) {
   x <- as.data.frame(x) # incase x is not passed as a data frame
   previous <- list(beta = beta, gamma = gamma)
-  # Formula for logarithm of gamma posterior, current selection likelihood
-  current_gamma_logpost <- cox_threshold_loglik(
+
+  # Loop through gamma selection
+  current_log_likelihood <- cox_threshold_loglik(
     x,
     y,
     beta,
     gamma,
     treatment_col = treatment_col,
     biomarker_cols = biomarker_cols
-  ) +
-    log_gamma_prior(gamma, mean = control$gamma_mean, sd = control$gamma_sd) -
-    lambda * sum(abs(gamma)) # penalty
+  )
+  gamma_proposal_sd <- repeat_parameter(control$gamma_proposal_sd, length(gamma))
+  for (gamma_index in seq_along(gamma)) {
+    # Get the current likelihood for this step
+    current_gamma_logpost <- current_log_likelihood +
+      log_gamma_prior(gamma, mean = control$gamma_mean, sd = control$gamma_sd) -
+      lambda * sum(abs(gamma))
 
-  # gamma proposal step (helper function)
-  candidate_gamma <- propose_gamma(gamma, proposal_sd = control$gamma_proposal_sd)
+    # Copy gamma for the new candidate an replace the current index with one step
+    candidate_gamma <- gamma
+    candidate_gamma[gamma_index] <- stats::rnorm(
+      1,
+      mean = gamma[gamma_index],
+      sd = gamma_proposal_sd[gamma_index]
+    )
+    candidate_log_likelihood <- cox_threshold_loglik(
+      x,
+      y,
+      beta,
+      candidate_gamma,
+      treatment_col = treatment_col,
+      biomarker_cols = biomarker_cols
+    )
+    candidate_gamma_logpost <- candidate_log_likelihood +
+      log_gamma_prior(candidate_gamma, mean = control$gamma_mean, sd = control$gamma_sd) -
+      lambda * sum(abs(candidate_gamma))
 
-  # Formula for logarithm of gamma posterior, candidate selection likelihood
-  candidate_gamma_logpost <- cox_threshold_loglik(
-    x,
-    y,
-    beta,
-    candidate_gamma,
-    treatment_col = treatment_col,
-    biomarker_cols = biomarker_cols
-  ) +
-    log_gamma_prior(candidate_gamma, mean = control$gamma_mean, sd = control$gamma_sd) -
-    lambda * sum(abs(candidate_gamma))
+    if (accept_metropolis(candidate_gamma_logpost, current_gamma_logpost)) {
+      gamma <- candidate_gamma
+      current_log_likelihood <- candidate_log_likelihood
+    }
+  }
+
+
+  # # gamma proposal step (helper function)
+  # candidate_gamma <- propose_gamma(gamma, proposal_sd = control$gamma_proposal_sd)
+  #
+  # # Formula for logarithm of gamma posterior, candidate selection likelihood
+  # candidate_gamma_logpost <- cox_threshold_loglik(
+  #   x,
+  #   y,
+  #   beta,
+  #   candidate_gamma,
+  #   treatment_col = treatment_col,
+  #   biomarker_cols = biomarker_cols
+  # ) +
+  #   log_gamma_prior(candidate_gamma, mean = control$gamma_mean, sd = control$gamma_sd) -
+  #   lambda * sum(abs(candidate_gamma))
 
   # Criterion for selection (symmetric gamma distribution allows for this formula)
-  if (stats::runif(1) < exp(candidate_gamma_logpost - current_gamma_logpost)) {
-    gamma <- candidate_gamma
-  }
+  # if (stats::runif(1) < exp(candidate_gamma_logpost - current_gamma_logpost)) {
+  #   gamma <- candidate_gamma
+  # }
 
   fit <- fit_threshold_cox(x, y, gamma, treatment_col, biomarker_cols)
 
-  # Formula for logarithm of beta posterior, current selection likelihood, using cox proportional hazard model
-  beta_loglik <- cox_threshold_loglik(
-    x,
-    y,
-    beta,
-    gamma,
-    treatment_col = treatment_col,
-    biomarker_cols = biomarker_cols
-  )
+  if (inherits(fit, "warning")) {
+    beta <- previous$beta
+    gamma <- previous$gamma
+  } else {
+    beta_loglik <- current_log_likelihood
+    beta_candidate <- as.vector(mvtnorm::rmvnorm(1, beta, stats::vcov(fit)))
+    if (all(is.finite(beta_candidate))) {
+      candidate_loglik <- cox_threshold_loglik(
+        x,
+        y,
+        beta_candidate,
+        gamma,
+        treatment_col = treatment_col,
+        biomarker_cols = biomarker_cols
+      )
 
-  # Gives a beta candidate from the fit
-  beta_candidate <- as.vector(mvtnorm::rmvnorm(1, beta, stats::vcov(fit)))
-  # Formula for logarithm of beta posterior, candidate likelihood, using cox proportional hazard model
-  candidate_loglik <- cox_threshold_loglik(
-    x,
-    y,
-    beta_candidate,
-    gamma,
-    treatment_col = treatment_col,
-    biomarker_cols = biomarker_cols
-  )
-
-  if (stats::runif(1) < exp(candidate_loglik - beta_loglik)) {
-    beta <- beta_candidate
+      if (accept_metropolis(candidate_loglik, beta_loglik)) {
+        beta <- beta_candidate
+      }
+    }
   }
+
 
   #log likelihood with new params
   log_likelihood <- cox_threshold_loglik(
@@ -294,3 +322,21 @@ summarize_mcmc <- function(posterior, alpha = 0.05, method = "mean") {
   ))
 }
 
+#' Decide whether to accept a Metropolis-Hastings proposal.
+#'
+#' Non-finite log ratios are rejected, which prevents `NA` acceptance
+#' probabilities from crashing the sampler.
+#'
+#' @param candidate_logpost Candidate log posterior or log likelihood.
+#' @param current_logpost Current log posterior or log likelihood.
+#'
+#' @return A logical scalar.
+#' @keywords internal
+accept_metropolis <- function(candidate_logpost, current_logpost) {
+  log_ratio <- candidate_logpost - current_logpost
+  if (!is.finite(log_ratio)) {
+    return(FALSE)
+  }
+
+  log(stats::runif(1)) < min(0, log_ratio)
+}
