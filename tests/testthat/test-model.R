@@ -13,17 +13,21 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
     study_end_range = c(0.4, 3)
   )
 
+  #Km test on the simulated data using the true known gamma parameters
   print(summarize_simulated_data(data, true_gamma))
   km_test <- kaplan_meier_threshold_test(
     data = data,
     gamma = true_gamma,
     strata = "treatment_threshold"
   )
+
+  # Print just the Chi-Squared and p-value from the above km test
   print(data.frame(
     km_logrank_chisq = km_test$logrank$chisq,
     km_logrank_p = km_test$p_value
   ))
 
+  # Set up an data frame of different starting gamma
   starting_values <- expand.grid(
     gamma_1 = seq(from = 0, to = 1, by = 0.1),
     gamma_2 = seq(from = 0, to = 1, by = 0.1)
@@ -33,15 +37,17 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
     data.frame(gamma_1 = true_gamma[1], gamma_2 = true_gamma[2])
   )
 
+  # Set up simulation metrics
   control <- default_mcmc_control(
-    samples = 20,
-    burn_in = 20,
-    thin = 1,
+    samples = 5000,
+    burn_in = 1000,
+    thin = 10,
     gamma_mean = c(0, 0),
     gamma_sd = 1,
     gamma_proposal_sd = 0.2
   )
 
+  # Correlation helper function
   fit_rows <- vector("list", nrow(starting_values))
   sample_correlation <- function(x, y) {
     if (stats::sd(x) == 0 || stats::sd(y) == 0) {
@@ -50,6 +56,9 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
     stats::cor(x, y)
   }
 
+  #' Try to fit with each set of starting gamma.
+  #' If it converges, print the fitted values and converged metrics.
+  #' If it fails to converfe, print NA values and `converged = FALSE`
   for (start_index in seq_len(nrow(starting_values))) {
     gamma_start <- as.numeric(starting_values[start_index, ])
 
@@ -111,11 +120,14 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
     )
   }
 
+  # Print all resulting summaries
   fit_summary <- do.call(rbind, fit_rows)
   print(fit_summary)
 
+  # Find all converged fits
   successful_fits <- fit_summary[fit_summary$converged, , drop = FALSE]
 
+  # Logical testing metrics to pass each time
   expect_gt(nrow(successful_fits), 0)
   expect_equal(nrow(fit_summary), nrow(starting_values))
   expect_true(all(is.finite(successful_fits$gamma_1)))
