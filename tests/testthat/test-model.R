@@ -5,7 +5,7 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
   true_beta <- c(log(3), log(1.2), log(2))
 
   data <- simulate_threshold_data(
-    n = 400,
+    n = 600,
     beta = true_beta,
     gamma = true_gamma,
     baseline_hazard = 1,
@@ -29,10 +29,10 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
 
   # Set up simulation metrics
   control <- default_mcmc_control(
-    samples = 3000,
-    burn_in = 2000,
+    samples = 20000,
+    burn_in = 10000,
     thin = 10,
-    gamma_mean = c(0, 0),
+    gamma_mean = c(0.5, 0.5),
     gamma_sd = 1,
     gamma_proposal_sd = 0.2
   )
