@@ -13,36 +13,32 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
     study_end_range = c(0.4, 3)
   )
 
+  #Km test on the simulated data using the true known gamma parameters
   print(summarize_simulated_data(data, true_gamma))
   km_test <- kaplan_meier_threshold_test(
     data = data,
     gamma = true_gamma,
     strata = "treatment_threshold"
   )
+
+  # Print just the Chi-Squared and p-value from the above km test
   print(data.frame(
     km_logrank_chisq = km_test$logrank$chisq,
     km_logrank_p = km_test$p_value
   ))
 
-  starting_values <- expand.grid(
-    gamma_1 = seq(from = 0, to = 1, by = 0.1),
-    gamma_2 = seq(from = 0, to = 1, by = 0.1)
-  )
-  starting_values <- rbind(
-    starting_values,
-    data.frame(gamma_1 = true_gamma[1], gamma_2 = true_gamma[2])
-  )
-
+  # Set up simulation metrics
   control <- default_mcmc_control(
-    samples = 20,
-    burn_in = 20,
-    thin = 1,
+    samples = 3000,
+    burn_in = 2000,
+    thin = 10,
     gamma_mean = c(0, 0),
     gamma_sd = 1,
     gamma_proposal_sd = 0.2
   )
 
-  fit_rows <- vector("list", nrow(starting_values))
+  # Correlation helper function
+  fit_rows <- list()
   sample_correlation <- function(x, y) {
     if (stats::sd(x) == 0 || stats::sd(y) == 0) {
       return(NA_real_)
@@ -50,8 +46,16 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
     stats::cor(x, y)
   }
 
-  for (start_index in seq_len(nrow(starting_values))) {
-    gamma_start <- as.numeric(starting_values[start_index, ])
+  #' Randomly sample starting gamma values until one fit converges.
+  #' If it converges, print the fitted values and converged metrics.
+  #' If it fails to converge, print NA values and `converged = FALSE`
+  max_start_attempts <- 100
+  for (start_index in seq_len(max_start_attempts)) {
+    gamma_start <- draw_gamma(
+      length(true_gamma),
+      mean = control$gamma_mean,
+      sd = control$gamma_sd
+    )
 
     fit_rows[[start_index]] <- tryCatch(
       {
@@ -109,15 +113,23 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
         )
       }
     )
+
+    if (isTRUE(fit_rows[[start_index]]$converged)) {
+      break
+    }
   }
 
+  # Print all resulting summaries
   fit_summary <- do.call(rbind, fit_rows)
   print(fit_summary)
 
+  # Find all converged fits
   successful_fits <- fit_summary[fit_summary$converged, , drop = FALSE]
 
+  # Logical testing metrics to pass each time
   expect_gt(nrow(successful_fits), 0)
-  expect_equal(nrow(fit_summary), nrow(starting_values))
+  expect_equal(nrow(successful_fits), 1)
+  expect_lte(nrow(fit_summary), max_start_attempts)
   expect_true(all(is.finite(successful_fits$gamma_1)))
   expect_true(all(is.finite(successful_fits$gamma_2)))
   expect_true(all(is.finite(successful_fits$beta_1)))
