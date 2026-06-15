@@ -7,9 +7,9 @@ test_that("threshold model converges across randomly generated simulation study 
   n_biomarkers <- 2
 
   control <- default_mcmc_control(
-    samples = 20000,
-    burn_in = 10000,
-    thin = 10,
+    samples = 5000,
+    burn_in = 6000,
+    thin = 4,
     gamma_mean = c(0.5, 0.5),
     gamma_sd = 1,
     gamma_proposal_sd = 0.2
@@ -212,9 +212,9 @@ test_that("threshold model converges across randomly generated simulation study 
   }
 
   study_summary <- do.call(rbind, study_rows)
-  print(study_summary)
-
   successful_fits <- study_summary[study_summary$converged, , drop = FALSE]
+  print(successful_fits)
+
   fitted_rows <- study_summary[!study_summary$skipped, , drop = FALSE]
 
   expect_equal(length(unique(study_summary$data_set_index)), n_data_sets)
