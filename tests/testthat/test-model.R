@@ -39,6 +39,7 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
 
   # Correlation helper function
   fit_rows <- list()
+  successful_posterior <- NULL
   sample_correlation <- function(x, y) {
     if (stats::sd(x) == 0 || stats::sd(y) == 0) {
       return(NA_real_)
@@ -49,6 +50,37 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
   #' Randomly sample starting gamma values until one fit converges.
   #' If it converges, print the fitted values and converged metrics.
   #' If it fails to converge, print NA values and `converged = FALSE`
+  plot_convergence_grid <- function(posterior, true_beta, true_gamma) {
+    old_par <- graphics::par(no.readonly = TRUE)
+    on.exit(graphics::par(old_par), add = TRUE)
+
+    graphics::par(mfrow = c(2, 3))
+    for (beta_index in seq_len(nrow(posterior$beta_samples))) {
+      graphics::plot(
+        posterior$beta_samples[beta_index, ],
+        type = "l",
+        xlab = "Retained MCMC sample",
+        ylab = paste0("beta_", beta_index),
+        main = paste0("beta_", beta_index, " convergence")
+      )
+      graphics::abline(h = true_beta[beta_index], col = "red", lty = 2)
+    }
+
+    for (gamma_index in seq_len(nrow(posterior$gamma_samples))) {
+      graphics::plot(
+        posterior$gamma_samples[gamma_index, ],
+        type = "l",
+        xlab = "Retained MCMC sample",
+        ylab = paste0("gamma_", gamma_index),
+        main = paste0("gamma_", gamma_index, " convergence")
+      )
+      graphics::abline(h = true_gamma[gamma_index], col = "red", lty = 2)
+    }
+
+    graphics::plot.new()
+    graphics::title(main = "Dashed red line = true value")
+  }
+
   max_start_attempts <- 100
   for (start_index in seq_len(max_start_attempts)) {
     gamma_start <- draw_gamma(
@@ -65,6 +97,7 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
           lambda = 0,
           gamma_start = gamma_start
         ))
+        successful_posterior <- posterior
         summary <- summarize_mcmc(posterior)
         gof <- threshold_fit_gof_tests(data, summary$gamma)
 
@@ -125,6 +158,9 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
 
   # Find all converged fits
   successful_fits <- fit_summary[fit_summary$converged, , drop = FALSE]
+  if (!is.null(successful_posterior)) {
+    plot_convergence_grid(successful_posterior, true_beta, true_gamma)
+  }
 
   # Logical testing metrics to pass each time
   expect_gt(nrow(successful_fits), 0)
