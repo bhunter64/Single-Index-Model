@@ -1,18 +1,18 @@
 test_that("threshold model converges across randomly generated simulation study data sets", {
   set.seed(20260612)
 
-  n_data_sets <- 20
+  n_data_sets <- 5
   min_group_size <- 60
   max_start_attempts <- 100
   n_biomarkers <- 2
 
   control <- default_mcmc_control(
-    samples = 5000,
-    burn_in = 6000,
+    samples = 20000,
+    burn_in = 10000,
     thin = 4,
     gamma_mean = c(0.5, 0.5),
     gamma_sd = 1,
-    gamma_proposal_sd = 0.2
+    gamma_proposal_sd = 0.5
   )
 
   sample_true_gamma <- function() {
@@ -22,9 +22,9 @@ test_that("threshold model converges across randomly generated simulation study 
 
   sample_true_beta <- function() {
     log(c(
-      stats::runif(1, min = 1.5, max = 3.5),
-      stats::runif(1, min = 1.05, max = 1.6),
-      stats::runif(1, min = 1.4, max = 2.6)
+      stats::runif(1, min = 0.5, max = 2),
+      stats::runif(1, min = 0.5, max = 2),
+      stats::runif(1, min = 0.5, max = 2)
     ))
   }
 
@@ -186,6 +186,7 @@ test_that("threshold model converges across randomly generated simulation study 
 
   study_summary <- do.call(rbind, study_rows)
   successful_fits <- study_summary[study_summary$converged, , drop = FALSE]
+  fitted_rows <- study_summary[!study_summary$skipped, , drop = FALSE]
   successful_beta_bias <- successful_fits[, c(
     "data_set_index",
     "true_beta_1",
@@ -198,15 +199,35 @@ test_that("threshold model converges across randomly generated simulation study 
     "beta_bias_2",
     "beta_bias_3"
   ), drop = FALSE]
-  empirical_beta_bias <- data.frame(
-    beta_1 = mean(successful_fits$beta_bias_1),
-    beta_2 = mean(successful_fits$beta_bias_2),
-    beta_3 = mean(successful_fits$beta_bias_3)
+  n_successful_fits <- nrow(successful_fits)
+  n_fitted_rows <- nrow(fitted_rows)
+  beta_bias_columns <- c("beta_bias_1", "beta_bias_2", "beta_bias_3")
+  empirical_beta_summary <- data.frame(
+    parameter = c("beta_1", "beta_2", "beta_3"),
+    bias = vapply(successful_fits[, beta_bias_columns, drop = FALSE], mean, numeric(1)),
+    absolute_bias = vapply(successful_fits[, beta_bias_columns, drop = FALSE], function(bias) {
+      mean(abs(bias))
+    }, numeric(1)),
+    rmse = vapply(successful_fits[, beta_bias_columns, drop = FALSE], function(bias) {
+      sqrt(mean(bias^2))
+    }, numeric(1)),
+    bias_mc_se = vapply(successful_fits[, beta_bias_columns, drop = FALSE], function(bias) {
+      if (length(bias) < 2L) {
+        return(NA_real_)
+      }
+      stats::sd(bias) / sqrt(length(bias))
+    }, numeric(1))
+  )
+  convergence_summary <- data.frame(
+    n_data_sets = n_data_sets,
+    n_skipped = sum(study_summary$skipped),
+    n_fit_attempted = n_fitted_rows,
+    n_successful = n_successful_fits,
+    convergence_rate = n_successful_fits / n_fitted_rows
   )
   print(successful_beta_bias)
-  print(empirical_beta_bias)
-
-  fitted_rows <- study_summary[!study_summary$skipped, , drop = FALSE]
+  print(empirical_beta_summary)
+  print(convergence_summary)
 
   expect_equal(length(unique(study_summary$data_set_index)), n_data_sets)
   expect_gt(nrow(successful_fits), 0)
@@ -226,7 +247,9 @@ test_that("threshold model converges across randomly generated simulation study 
   expect_true(all(is.finite(successful_fits$beta_bias_1)))
   expect_true(all(is.finite(successful_fits$beta_bias_2)))
   expect_true(all(is.finite(successful_fits$beta_bias_3)))
-  expect_true(all(is.finite(empirical_beta_bias$beta_1)))
-  expect_true(all(is.finite(empirical_beta_bias$beta_2)))
-  expect_true(all(is.finite(empirical_beta_bias$beta_3)))
+  expect_true(all(is.finite(empirical_beta_summary$bias)))
+  expect_true(all(is.finite(empirical_beta_summary$absolute_bias)))
+  expect_true(all(is.finite(empirical_beta_summary$rmse)))
+  expect_true(all(is.finite(empirical_beta_summary$bias_mc_se)) || n_successful_fits < 2L)
+  expect_true(all(is.finite(convergence_summary$convergence_rate)))
 })

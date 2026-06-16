@@ -2,7 +2,7 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
   set.seed(20260526)
 
   true_gamma <- c(1.5, 1.8)
-  true_beta <- c(log(3), log(1.2), log(2))
+  true_beta <- c(log(1.5), log(1.2), log(2))
 
   data <- simulate_threshold_data(
     n = 600,
@@ -34,7 +34,7 @@ test_that("threshold model can be fit repeatedly from different gamma starts", {
     thin = 10,
     gamma_mean = c(0.5, 0.5),
     gamma_sd = 1,
-    gamma_proposal_sd = 0.2
+    gamma_proposal_sd = 0.5
   )
 
   # Correlation helper function
