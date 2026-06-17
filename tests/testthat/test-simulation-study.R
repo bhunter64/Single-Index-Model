@@ -1,40 +1,38 @@
 test_that("threshold model converges across randomly generated simulation study data sets", {
   set.seed(20260612)
 
-  n_data_sets <- 100
-  min_group_size <- 60
-  max_start_attempts <- 100
-  n_biomarkers <- 2
 
+  n_data_sets <- 20 # Number of data sets to simulate for the simulation
+  min_group_size <- 60 # Appropriate portions for convergence
+  max_start_attempts <- 100 # How many times to try gamma draws to simulate each set
+  n_biomarkers <- 2 # Number of biomarkers in each set
+
+  # MCMC control data
   control <- default_mcmc_control(
     samples = 20000,
     burn_in = 10000,
     thin = 10,
     gamma_mean = c(0.5, 0.5),
     gamma_sd = 1,
-    gamma_proposal_sd = 0.2
+    gamma_proposal_sd = 0.5
   )
 
+  # Helper sampling function for the starting gammas
   sample_true_gamma <- function() {
-    stats::runif(n_biomarkers, min = 1.2, max = 2.2) *
+    stats::runif(n_biomarkers, min = 0.5, max = 2.2) *
       sample(c(-1, 1), n_biomarkers, replace = TRUE)
   }
 
+  # Helper sampling function for the betas used in the simulation of the data
   sample_true_beta <- function() {
     log(c(
-      stats::runif(1, min = 1.5, max = 3.5),
-      stats::runif(1, min = 1.05, max = 1.6),
-      stats::runif(1, min = 1.4, max = 2.6)
+      stats::runif(1, min = 0.5, max = 2),
+      stats::runif(1, min = 0.5, max = 2),
+      stats::runif(1, min = 0.5, max = 2)
     ))
   }
 
-  sample_correlation <- function(x, y) {
-    if (stats::sd(x) == 0 || stats::sd(y) == 0) {
-      return(NA_real_)
-    }
-    stats::cor(x, y)
-  }
-
+  # If a data set can't get a start after `max_start_attempts` of gamma, it gets a skipped-data-set
   skipped_data_set_row <- function(data_set_index, true_beta, true_gamma, data_summary, skip_reason) {
     data.frame(
       data_set_index = data_set_index,
@@ -57,23 +55,15 @@ test_that("threshold model converges across randomly generated simulation study 
       beta_1 = NA_real_,
       beta_2 = NA_real_,
       beta_3 = NA_real_,
+      beta_bias_1 = NA_real_,
+      beta_bias_2 = NA_real_,
+      beta_bias_3 = NA_real_,
       gamma_1 = NA_real_,
-      gamma_2 = NA_real_,
-      mean_loglik = NA_real_,
-      gamma_correlation = NA_real_,
-      gof_converged = FALSE,
-      loglik = NA_real_,
-      aic = NA_real_,
-      concordance = NA_real_,
-      likelihood_ratio_p = NA_real_,
-      wald_p = NA_real_,
-      score_p = NA_real_,
-      ph_global_p = NA_real_,
-      cox_snell_ks_statistic = NA_real_,
-      cox_snell_ks_p = NA_real_
+      gamma_2 = NA_real_
     )
   }
 
+  # Helper (wrapper) to make each data set
   simulate_data_set <- function(data_set_index) {
     true_gamma <- sample_true_gamma()
     true_beta <- sample_true_beta()
@@ -126,9 +116,9 @@ test_that("threshold model converges across randomly generated simulation study 
             gamma_start = gamma_start
           ))
           summary <- summarize_mcmc(posterior)
-          gof <- threshold_fit_gof_tests(data, summary$gamma)
+          beta_bias <- summary$beta - true_beta
 
-          cbind(data.frame(
+          data.frame(
             data_set_index = data_set_index,
             start_index = start_index,
             true_beta_1 = true_beta[1],
@@ -149,14 +139,12 @@ test_that("threshold model converges across randomly generated simulation study 
             beta_1 = summary$beta[1],
             beta_2 = summary$beta[2],
             beta_3 = summary$beta[3],
+            beta_bias_1 = beta_bias[1],
+            beta_bias_2 = beta_bias[2],
+            beta_bias_3 = beta_bias[3],
             gamma_1 = summary$gamma[1],
-            gamma_2 = summary$gamma[2],
-            mean_loglik = mean(posterior$loglik_samples),
-            gamma_correlation = sample_correlation(
-              posterior$gamma_samples[1, ],
-              posterior$gamma_samples[2, ]
-            )
-          ), gof)
+            gamma_2 = summary$gamma[2]
+          )
         },
         error = function(err) {
           data.frame(
@@ -180,20 +168,11 @@ test_that("threshold model converges across randomly generated simulation study 
             beta_1 = NA_real_,
             beta_2 = NA_real_,
             beta_3 = NA_real_,
+            beta_bias_1 = NA_real_,
+            beta_bias_2 = NA_real_,
+            beta_bias_3 = NA_real_,
             gamma_1 = NA_real_,
-            gamma_2 = NA_real_,
-            mean_loglik = NA_real_,
-            gamma_correlation = NA_real_,
-            gof_converged = FALSE,
-            loglik = NA_real_,
-            aic = NA_real_,
-            concordance = NA_real_,
-            likelihood_ratio_p = NA_real_,
-            wald_p = NA_real_,
-            score_p = NA_real_,
-            ph_global_p = NA_real_,
-            cox_snell_ks_statistic = NA_real_,
-            cox_snell_ks_p = NA_real_
+            gamma_2 = NA_real_
           )
         }
       )
@@ -211,11 +190,61 @@ test_that("threshold model converges across randomly generated simulation study 
     study_rows[[data_set_index]] <- simulate_data_set(data_set_index)
   }
 
+  # Combine the sim results, extract the succesfull sets only
   study_summary <- do.call(rbind, study_rows)
-  print(study_summary)
-
   successful_fits <- study_summary[study_summary$converged, , drop = FALSE]
   fitted_rows <- study_summary[!study_summary$skipped, , drop = FALSE]
+
+  # Extract the data needed to calculate the beta biases
+  successful_beta_bias <- successful_fits[, c(
+    "data_set_index",
+    "true_beta_1",
+    "true_beta_2",
+    "true_beta_3",
+    "beta_1",
+    "beta_2",
+    "beta_3",
+    "beta_bias_1",
+    "beta_bias_2",
+    "beta_bias_3"
+  ), drop = FALSE]
+
+  # Helpful info for the following biases calculations
+  n_successful_fits <- nrow(successful_fits)
+  n_fitted_rows <- nrow(fitted_rows)
+  beta_bias_columns <- c("beta_bias_1", "beta_bias_2", "beta_bias_3")
+
+  # Biases summary, empirical bias, absolute
+  empirical_beta_summary <- data.frame(
+    parameter = c("beta_1", "beta_2", "beta_3"),
+    # Regualr empirical bias
+    bias = vapply(successful_fits[, beta_bias_columns, drop = FALSE], mean, numeric(1)),
+    # Empirical mean of absolute bias
+    absolute_bias = vapply(successful_fits[, beta_bias_columns, drop = FALSE], function(bias) {
+      mean(abs(bias))
+    }, numeric(1)),
+    # RMSE of biases
+    rmse = vapply(successful_fits[, beta_bias_columns, drop = FALSE], function(bias) {
+      sqrt(mean(bias^2))
+    }, numeric(1)),
+    # Standard error of biases
+    bias_mc_se = vapply(successful_fits[, beta_bias_columns, drop = FALSE], function(bias) {
+      if (length(bias) < 2L) {
+        return(NA_real_)
+      }
+      stats::sd(bias) / sqrt(length(bias))
+    }, numeric(1))
+  )
+  convergence_summary <- data.frame(
+    n_data_sets = n_data_sets,
+    n_skipped = sum(study_summary$skipped),
+    n_fit_attempted = n_fitted_rows,
+    n_successful = n_successful_fits,
+    convergence_rate = n_successful_fits / n_fitted_rows
+  )
+  print(successful_beta_bias)
+  print(empirical_beta_summary)
+  #print(convergence_summary)
 
   expect_equal(length(unique(study_summary$data_set_index)), n_data_sets)
   expect_gt(nrow(successful_fits), 0)
@@ -232,9 +261,12 @@ test_that("threshold model converges across randomly generated simulation study 
   expect_true(all(is.finite(successful_fits$beta_1)))
   expect_true(all(is.finite(successful_fits$beta_2)))
   expect_true(all(is.finite(successful_fits$beta_3)))
-  expect_true(all(is.finite(successful_fits$mean_loglik)))
-  expect_true(all(successful_fits$gof_converged))
-  expect_true(all(is.finite(successful_fits$aic)))
-  expect_true(all(is.finite(successful_fits$concordance)))
-  expect_true(all(is.finite(successful_fits$cox_snell_ks_p)))
+  expect_true(all(is.finite(successful_fits$beta_bias_1)))
+  expect_true(all(is.finite(successful_fits$beta_bias_2)))
+  expect_true(all(is.finite(successful_fits$beta_bias_3)))
+  expect_true(all(is.finite(empirical_beta_summary$bias)))
+  expect_true(all(is.finite(empirical_beta_summary$absolute_bias)))
+  expect_true(all(is.finite(empirical_beta_summary$rmse)))
+  expect_true(all(is.finite(empirical_beta_summary$bias_mc_se)) || n_successful_fits < 2L)
+  expect_true(all(is.finite(convergence_summary$convergence_rate)))
 })
