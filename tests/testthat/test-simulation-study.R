@@ -1,25 +1,29 @@
 test_that("threshold model converges across randomly generated simulation study data sets", {
   set.seed(20260612)
 
-  n_data_sets <- 5
-  min_group_size <- 60
-  max_start_attempts <- 100
-  n_biomarkers <- 2
 
+  n_data_sets <- 20 # Number of data sets to simulate for the simulation
+  min_group_size <- 60 # Appropriate portions for convergence
+  max_start_attempts <- 100 # How many times to try gamma draws to simulate each set
+  n_biomarkers <- 2 # Number of biomarkers in each set
+
+  # MCMC control data
   control <- default_mcmc_control(
     samples = 20000,
     burn_in = 10000,
-    thin = 4,
+    thin = 10,
     gamma_mean = c(0.5, 0.5),
     gamma_sd = 1,
     gamma_proposal_sd = 0.5
   )
 
+  # Helper sampling function for the starting gammas
   sample_true_gamma <- function() {
-    stats::runif(n_biomarkers, min = 1.2, max = 2.2) *
+    stats::runif(n_biomarkers, min = 0.5, max = 2.2) *
       sample(c(-1, 1), n_biomarkers, replace = TRUE)
   }
 
+  # Helper sampling function for the betas used in the simulation of the data
   sample_true_beta <- function() {
     log(c(
       stats::runif(1, min = 0.5, max = 2),
@@ -28,6 +32,7 @@ test_that("threshold model converges across randomly generated simulation study 
     ))
   }
 
+  # If a data set can't get a start after `max_start_attempts` of gamma, it gets a skipped-data-set
   skipped_data_set_row <- function(data_set_index, true_beta, true_gamma, data_summary, skip_reason) {
     data.frame(
       data_set_index = data_set_index,
@@ -58,6 +63,7 @@ test_that("threshold model converges across randomly generated simulation study 
     )
   }
 
+  # Helper (wrapper) to make each data set
   simulate_data_set <- function(data_set_index) {
     true_gamma <- sample_true_gamma()
     true_beta <- sample_true_beta()
@@ -184,9 +190,12 @@ test_that("threshold model converges across randomly generated simulation study 
     study_rows[[data_set_index]] <- simulate_data_set(data_set_index)
   }
 
+  # Combine the sim results, extract the succesfull sets only
   study_summary <- do.call(rbind, study_rows)
   successful_fits <- study_summary[study_summary$converged, , drop = FALSE]
   fitted_rows <- study_summary[!study_summary$skipped, , drop = FALSE]
+
+  # Extract the data needed to calculate the beta biases
   successful_beta_bias <- successful_fits[, c(
     "data_set_index",
     "true_beta_1",
@@ -199,18 +208,26 @@ test_that("threshold model converges across randomly generated simulation study 
     "beta_bias_2",
     "beta_bias_3"
   ), drop = FALSE]
+
+  # Helpful info for the following biases calculations
   n_successful_fits <- nrow(successful_fits)
   n_fitted_rows <- nrow(fitted_rows)
   beta_bias_columns <- c("beta_bias_1", "beta_bias_2", "beta_bias_3")
+
+  # Biases summary, empirical bias, absolute
   empirical_beta_summary <- data.frame(
     parameter = c("beta_1", "beta_2", "beta_3"),
+    # Regualr empirical bias
     bias = vapply(successful_fits[, beta_bias_columns, drop = FALSE], mean, numeric(1)),
+    # Empirical mean of absolute bias
     absolute_bias = vapply(successful_fits[, beta_bias_columns, drop = FALSE], function(bias) {
       mean(abs(bias))
     }, numeric(1)),
+    # RMSE of biases
     rmse = vapply(successful_fits[, beta_bias_columns, drop = FALSE], function(bias) {
       sqrt(mean(bias^2))
     }, numeric(1)),
+    # Standard error of biases
     bias_mc_se = vapply(successful_fits[, beta_bias_columns, drop = FALSE], function(bias) {
       if (length(bias) < 2L) {
         return(NA_real_)
@@ -227,7 +244,7 @@ test_that("threshold model converges across randomly generated simulation study 
   )
   print(successful_beta_bias)
   print(empirical_beta_summary)
-  print(convergence_summary)
+  #print(convergence_summary)
 
   expect_equal(length(unique(study_summary$data_set_index)), n_data_sets)
   expect_gt(nrow(successful_fits), 0)
