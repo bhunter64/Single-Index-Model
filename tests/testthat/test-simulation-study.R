@@ -2,8 +2,9 @@ test_that("threshold model converges across randomly generated simulation study 
   set.seed(20260612)
 
 
-  n_data_sets <- 20 # Number of data sets to simulate for the simulation
+  n_data_sets <- 50 # Number of data sets to simulate for the simulation
   min_group_size <- 60 # Appropriate portions for convergence
+  max_true_parameter_attempts <- 100 # How many times to try true gamma/beta draws
   max_start_attempts <- 100 # How many times to try gamma draws to simulate each set
   n_biomarkers <- 2 # Number of biomarkers in each set
 
@@ -30,6 +31,38 @@ test_that("threshold model converges across randomly generated simulation study 
       stats::runif(1, min = 0.5, max = 2),
       stats::runif(1, min = 0.5, max = 2)
     ))
+  }
+
+  simulate_from_true_parameters <- function(true_beta, true_gamma) {
+    simulate_threshold_data(
+      n = 600,
+      beta = true_beta,
+      gamma = true_gamma,
+      baseline_hazard = 1,
+      biomarker_correlation = 0,
+      study_end_range = c(0.4, 3)
+    )
+  }
+
+  find_true_parameters <- function() {
+    for (parameter_attempt in seq_len(max_true_parameter_attempts)) {
+      true_gamma <- sample_true_gamma()
+      true_beta <- sample_true_beta()
+
+      data <- simulate_from_true_parameters(true_beta, true_gamma)
+      data_summary <- summarize_simulated_data(data, true_gamma)
+
+      if (all(data_summary$group_sizes >= min_group_size)) {
+        return(list(
+          beta = true_beta,
+          gamma = true_gamma,
+          data_summary = data_summary,
+          attempt = parameter_attempt
+        ))
+      }
+    }
+
+    stop("could not find true beta/gamma values satisfying the simulation criterion", call. = FALSE)
   }
 
   # If a data set can't get a start after `max_start_attempts` of gamma, it gets a skipped-data-set
@@ -64,18 +97,11 @@ test_that("threshold model converges across randomly generated simulation study 
   }
 
   # Helper (wrapper) to make each data set
-  simulate_data_set <- function(data_set_index) {
-    true_gamma <- sample_true_gamma()
-    true_beta <- sample_true_beta()
+  simulate_data_set <- function(data_set_index, true_parameters) {
+    true_gamma <- true_parameters$gamma
+    true_beta <- true_parameters$beta
 
-    data <- simulate_threshold_data(
-      n = 600,
-      beta = true_beta,
-      gamma = true_gamma,
-      baseline_hazard = 1,
-      biomarker_correlation = 0,
-      study_end_range = c(0.4, 3)
-    )
+    data <- simulate_from_true_parameters(true_beta, true_gamma)
     data_summary <- summarize_simulated_data(data, true_gamma)
 
     if (!all(data_summary$group_sizes >= min_group_size)) {
@@ -185,9 +211,11 @@ test_that("threshold model converges across randomly generated simulation study 
     do.call(rbind, fit_rows)
   }
 
+  true_parameters <- find_true_parameters()
+
   study_rows <- vector("list", n_data_sets)
   for (data_set_index in seq_len(n_data_sets)) {
-    study_rows[[data_set_index]] <- simulate_data_set(data_set_index)
+    study_rows[[data_set_index]] <- simulate_data_set(data_set_index, true_parameters)
   }
 
   # Combine the sim results, extract the succesfull sets only
@@ -248,6 +276,16 @@ test_that("threshold model converges across randomly generated simulation study 
 
   expect_equal(length(unique(study_summary$data_set_index)), n_data_sets)
   expect_gt(nrow(successful_fits), 0)
+  expect_equal(
+    nrow(unique(study_summary[, c(
+      "true_beta_1",
+      "true_beta_2",
+      "true_beta_3",
+      "true_gamma_1",
+      "true_gamma_2"
+    ), drop = FALSE])),
+    1
+  )
   expect_true(all(table(successful_fits$data_set_index) == 1))
   if (nrow(fitted_rows) > 0) {
     expect_lte(max(fitted_rows$start_index), max_start_attempts)
