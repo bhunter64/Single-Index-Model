@@ -1,5 +1,4 @@
 test_that("threshold model records fixed-parameter simulation study results", {
-  set.seed(20260708)
 
   n_data_sets <- 10 # Number of data sets to simulate for the simulation
   min_group_size <- 60 # Appropriate portions for convergence
