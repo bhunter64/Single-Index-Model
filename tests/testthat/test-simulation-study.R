@@ -5,7 +5,7 @@ test_that("threshold model converges across randomly generated simulation study 
   n_data_sets <- 50 # Number of data sets to simulate for the simulation
   min_group_size <- 60 # Appropriate portions for convergence
   max_true_parameter_attempts <- 100 # How many times to try true gamma/beta draws
-  max_start_attempts <- 100 # How many times to try gamma draws to simulate each set
+  max_data_set_attempts <- 100 # How many times to regenerate each set after failed fitting
   n_biomarkers <- 2 # Number of biomarkers in each set
 
   # MCMC control data
@@ -65,10 +65,11 @@ test_that("threshold model converges across randomly generated simulation study 
     stop("could not find true beta/gamma values satisfying the simulation criterion", call. = FALSE)
   }
 
-  # If a data set can't get a start after `max_start_attempts` of gamma, it gets a skipped-data-set
-  skipped_data_set_row <- function(data_set_index, true_beta, true_gamma, data_summary, skip_reason) {
+  # If a data set can't fit after `max_data_set_attempts` regenerated data sets, it gets a skipped-data-set
+  skipped_data_set_row <- function(data_set_index, data_set_attempt, true_beta, true_gamma, data_summary, skip_reason) {
     data.frame(
       data_set_index = data_set_index,
+      data_set_attempt = data_set_attempt,
       start_index = NA_integer_,
       true_beta_1 = true_beta[1],
       true_beta_2 = true_beta[2],
@@ -101,114 +102,119 @@ test_that("threshold model converges across randomly generated simulation study 
     true_gamma <- true_parameters$gamma
     true_beta <- true_parameters$beta
 
-    data <- simulate_from_true_parameters(true_beta, true_gamma)
-    data_summary <- summarize_simulated_data(data, true_gamma)
-
-    if (!all(data_summary$group_sizes >= min_group_size)) {
-      return(skipped_data_set_row(
-        data_set_index = data_set_index,
-        true_beta = true_beta,
-        true_gamma = true_gamma,
-        data_summary = data_summary,
-        skip_reason = "insufficient_group_size"
-      ))
-    }
-
-    fit_one_data_set(
-      data_set_index = data_set_index,
-      data = data,
-      true_beta = true_beta,
-      true_gamma = true_gamma,
-      data_summary = data_summary
-    )
-  }
-
-  fit_one_data_set <- function(data_set_index, data, true_beta, true_gamma, data_summary) {
     fit_rows <- list()
 
-    for (start_index in seq_len(max_start_attempts)) {
-      gamma_start <- draw_gamma(
-        length(true_gamma),
-        mean = control$gamma_mean,
-        sd = control$gamma_sd
-      )
+    for (data_set_attempt in seq_len(max_data_set_attempts)) {
+      data <- simulate_from_true_parameters(true_beta, true_gamma)
+      data_summary <- summarize_simulated_data(data, true_gamma)
 
-      fit_rows[[start_index]] <- tryCatch(
-        {
-          posterior <- suppressWarnings(fit_threshold_model(
-            data = data,
-            control = control,
-            lambda = 0,
-            gamma_start = gamma_start
-          ))
-          summary <- summarize_mcmc(posterior)
-          beta_bias <- summary$beta - true_beta
+      if (!all(data_summary$group_sizes >= min_group_size)) {
+        fit_rows[[data_set_attempt]] <- skipped_data_set_row(
+          data_set_index = data_set_index,
+          data_set_attempt = data_set_attempt,
+          true_beta = true_beta,
+          true_gamma = true_gamma,
+          data_summary = data_summary,
+          skip_reason = "insufficient_group_size"
+        )
+      } else {
+        fit_rows[[data_set_attempt]] <- fit_one_data_set(
+          data_set_index = data_set_index,
+          data_set_attempt = data_set_attempt,
+          data = data,
+          true_beta = true_beta,
+          true_gamma = true_gamma,
+          data_summary = data_summary
+        )
+      }
 
-          data.frame(
-            data_set_index = data_set_index,
-            start_index = start_index,
-            true_beta_1 = true_beta[1],
-            true_beta_2 = true_beta[2],
-            true_beta_3 = true_beta[3],
-            true_gamma_1 = true_gamma[1],
-            true_gamma_2 = true_gamma[2],
-            gamma_start_1 = gamma_start[1],
-            gamma_start_2 = gamma_start[2],
-            treated_above = data_summary$group_sizes[["treated_above"]],
-            treated_below = data_summary$group_sizes[["treated_below"]],
-            control_above = data_summary$group_sizes[["control_above"]],
-            control_below = data_summary$group_sizes[["control_below"]],
-            skipped = FALSE,
-            skip_reason = NA_character_,
-            converged = TRUE,
-            error = NA_character_,
-            beta_1 = summary$beta[1],
-            beta_2 = summary$beta[2],
-            beta_3 = summary$beta[3],
-            beta_bias_1 = beta_bias[1],
-            beta_bias_2 = beta_bias[2],
-            beta_bias_3 = beta_bias[3],
-            gamma_1 = summary$gamma[1],
-            gamma_2 = summary$gamma[2]
-          )
-        },
-        error = function(err) {
-          data.frame(
-            data_set_index = data_set_index,
-            start_index = start_index,
-            true_beta_1 = true_beta[1],
-            true_beta_2 = true_beta[2],
-            true_beta_3 = true_beta[3],
-            true_gamma_1 = true_gamma[1],
-            true_gamma_2 = true_gamma[2],
-            gamma_start_1 = gamma_start[1],
-            gamma_start_2 = gamma_start[2],
-            treated_above = data_summary$group_sizes[["treated_above"]],
-            treated_below = data_summary$group_sizes[["treated_below"]],
-            control_above = data_summary$group_sizes[["control_above"]],
-            control_below = data_summary$group_sizes[["control_below"]],
-            skipped = FALSE,
-            skip_reason = NA_character_,
-            converged = FALSE,
-            error = conditionMessage(err),
-            beta_1 = NA_real_,
-            beta_2 = NA_real_,
-            beta_3 = NA_real_,
-            beta_bias_1 = NA_real_,
-            beta_bias_2 = NA_real_,
-            beta_bias_3 = NA_real_,
-            gamma_1 = NA_real_,
-            gamma_2 = NA_real_
-          )
-        }
-      )
-
-      if (isTRUE(fit_rows[[start_index]]$converged)) {
+      if (isTRUE(fit_rows[[data_set_attempt]]$converged)) {
         break
       }
     }
 
     do.call(rbind, fit_rows)
+  }
+
+  fit_one_data_set <- function(data_set_index, data_set_attempt, data, true_beta, true_gamma, data_summary) {
+    start_index <- 1L
+    gamma_start <- draw_gamma(
+      length(true_gamma),
+      mean = control$gamma_mean,
+      sd = control$gamma_sd
+    )
+
+    tryCatch(
+      {
+        posterior <- suppressWarnings(fit_threshold_model(
+          data = data,
+          control = control,
+          lambda = 0,
+          gamma_start = gamma_start
+        ))
+        summary <- summarize_mcmc(posterior)
+        beta_bias <- summary$beta - true_beta
+
+        data.frame(
+          data_set_index = data_set_index,
+          data_set_attempt = data_set_attempt,
+          start_index = start_index,
+          true_beta_1 = true_beta[1],
+          true_beta_2 = true_beta[2],
+          true_beta_3 = true_beta[3],
+          true_gamma_1 = true_gamma[1],
+          true_gamma_2 = true_gamma[2],
+          gamma_start_1 = gamma_start[1],
+          gamma_start_2 = gamma_start[2],
+          treated_above = data_summary$group_sizes[["treated_above"]],
+          treated_below = data_summary$group_sizes[["treated_below"]],
+          control_above = data_summary$group_sizes[["control_above"]],
+          control_below = data_summary$group_sizes[["control_below"]],
+          skipped = FALSE,
+          skip_reason = NA_character_,
+          converged = TRUE,
+          error = NA_character_,
+          beta_1 = summary$beta[1],
+          beta_2 = summary$beta[2],
+          beta_3 = summary$beta[3],
+          beta_bias_1 = beta_bias[1],
+          beta_bias_2 = beta_bias[2],
+          beta_bias_3 = beta_bias[3],
+          gamma_1 = summary$gamma[1],
+          gamma_2 = summary$gamma[2]
+        )
+      },
+      error = function(err) {
+        data.frame(
+          data_set_index = data_set_index,
+          data_set_attempt = data_set_attempt,
+          start_index = start_index,
+          true_beta_1 = true_beta[1],
+          true_beta_2 = true_beta[2],
+          true_beta_3 = true_beta[3],
+          true_gamma_1 = true_gamma[1],
+          true_gamma_2 = true_gamma[2],
+          gamma_start_1 = gamma_start[1],
+          gamma_start_2 = gamma_start[2],
+          treated_above = data_summary$group_sizes[["treated_above"]],
+          treated_below = data_summary$group_sizes[["treated_below"]],
+          control_above = data_summary$group_sizes[["control_above"]],
+          control_below = data_summary$group_sizes[["control_below"]],
+          skipped = FALSE,
+          skip_reason = NA_character_,
+          converged = FALSE,
+          error = conditionMessage(err),
+          beta_1 = NA_real_,
+          beta_2 = NA_real_,
+          beta_3 = NA_real_,
+          beta_bias_1 = NA_real_,
+          beta_bias_2 = NA_real_,
+          beta_bias_3 = NA_real_,
+          gamma_1 = NA_real_,
+          gamma_2 = NA_real_
+        )
+      }
+    )
   }
 
   true_parameters <- find_true_parameters()
@@ -288,7 +294,7 @@ test_that("threshold model converges across randomly generated simulation study 
   )
   expect_true(all(table(successful_fits$data_set_index) == 1))
   if (nrow(fitted_rows) > 0) {
-    expect_lte(max(fitted_rows$start_index), max_start_attempts)
+    expect_lte(max(fitted_rows$data_set_attempt), max_data_set_attempts)
   }
   expect_true(all(successful_fits$treated_above >= min_group_size))
   expect_true(all(successful_fits$treated_below >= min_group_size))

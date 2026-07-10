@@ -5,7 +5,7 @@ parse_args <- function(args) {
     replicate_index = Sys.getenv("SLURM_ARRAY_TASK_ID", unset = "1"),
     n_data_sets = "10",
     output_dir = "results/fixed-parameter-simulation",
-    max_start_attempts = "100",
+    max_data_set_attempts = "100",
     samples = "20000",
     burn_in = "10000",
     thin = "10"
@@ -18,7 +18,7 @@ parse_args <- function(args) {
       "--replicate-index",
       "--n-data-sets",
       "--output-dir",
-      "--max-start-attempts",
+      "--max-data-set-attempts",
       "--samples",
       "--burn-in",
       "--thin"
@@ -33,7 +33,7 @@ parse_args <- function(args) {
 
   values$replicate_index <- as.integer(values$replicate_index)
   values$n_data_sets <- as.integer(values$n_data_sets)
-  values$max_start_attempts <- as.integer(values$max_start_attempts)
+  values$max_data_set_attempts <- as.integer(values$max_data_set_attempts)
   values$samples <- as.integer(values$samples)
   values$burn_in <- as.integer(values$burn_in)
   values$thin <- as.integer(values$thin)
@@ -136,6 +136,7 @@ empty_fit_metric_columns <- function() {
 
 base_result_columns <- function(replicate_index,
                                 data_set_index,
+                                data_set_attempt,
                                 start_index,
                                 true_beta,
                                 true_gamma,
@@ -149,6 +150,7 @@ base_result_columns <- function(replicate_index,
     replicate_index = replicate_index,
     data_set_index = data_set_index,
     global_data_set_index = (replicate_index - 1L) * args$n_data_sets + data_set_index,
+    data_set_attempt = data_set_attempt,
     start_index = start_index,
     true_beta_1 = true_beta[1],
     true_beta_2 = true_beta[2],
@@ -172,11 +174,18 @@ result_row <- function(base_columns, metric_columns) {
   data.frame(base_columns, as.list(metric_columns), check.names = FALSE)
 }
 
-skipped_data_set_row <- function(replicate_index, data_set_index, true_beta, true_gamma, data_summary, skip_reason) {
+skipped_data_set_row <- function(replicate_index,
+                                 data_set_index,
+                                 data_set_attempt,
+                                 true_beta,
+                                 true_gamma,
+                                 data_summary,
+                                 skip_reason) {
   result_row(
     base_result_columns(
       replicate_index = replicate_index,
       data_set_index = data_set_index,
+      data_set_attempt = data_set_attempt,
       start_index = NA_integer_,
       true_beta = true_beta,
       true_gamma = true_gamma,
@@ -191,90 +200,95 @@ skipped_data_set_row <- function(replicate_index, data_set_index, true_beta, tru
   )
 }
 
-fit_one_data_set <- function(replicate_index, data_set_index, data, true_beta, true_gamma, data_summary) {
+fit_one_data_set <- function(replicate_index, data_set_index, data_set_attempt, data, true_beta, true_gamma, data_summary) {
+  start_index <- 1L
+  gamma_start <- gamma_start_values
+
+  tryCatch(
+    {
+      posterior <- suppressWarnings(fit_threshold_model(
+        data = data,
+        control = control,
+        lambda = 0,
+        gamma_start = gamma_start
+      ))
+      summary <- summarize_mcmc(posterior)
+
+      result_row(
+        base_result_columns(
+          replicate_index = replicate_index,
+          data_set_index = data_set_index,
+          data_set_attempt = data_set_attempt,
+          start_index = start_index,
+          true_beta = true_beta,
+          true_gamma = true_gamma,
+          gamma_start = gamma_start,
+          data_summary = data_summary,
+          skipped = FALSE,
+          skip_reason = NA_character_,
+          converged = TRUE,
+          error = NA_character_
+        ),
+        fit_metric_columns(summary$beta, summary$gamma, true_beta, true_gamma)
+      )
+    },
+    error = function(err) {
+      result_row(
+        base_result_columns(
+          replicate_index = replicate_index,
+          data_set_index = data_set_index,
+          data_set_attempt = data_set_attempt,
+          start_index = start_index,
+          true_beta = true_beta,
+          true_gamma = true_gamma,
+          gamma_start = gamma_start,
+          data_summary = data_summary,
+          skipped = FALSE,
+          skip_reason = NA_character_,
+          converged = FALSE,
+          error = conditionMessage(err)
+        ),
+        empty_fit_metric_columns()
+      )
+    }
+  )
+}
+
+simulate_data_set <- function(replicate_index, data_set_index) {
   fit_rows <- list()
 
-  for (start_index in seq_len(args$max_start_attempts)) {
-    gamma_start <- gamma_start_values
+  for (data_set_attempt in seq_len(args$max_data_set_attempts)) {
+    data <- simulate_from_true_parameters(true_beta, true_gamma)
+    data_summary <- summarize_simulated_data(data, true_gamma)
 
-    fit_rows[[start_index]] <- tryCatch(
-      {
-        posterior <- suppressWarnings(fit_threshold_model(
-          data = data,
-          control = control,
-          lambda = 0,
-          gamma_start = gamma_start
-        ))
-        summary <- summarize_mcmc(posterior)
+    if (!all(data_summary$group_sizes >= min_group_size)) {
+      fit_rows[[data_set_attempt]] <- skipped_data_set_row(
+        replicate_index = replicate_index,
+        data_set_index = data_set_index,
+        data_set_attempt = data_set_attempt,
+        true_beta = true_beta,
+        true_gamma = true_gamma,
+        data_summary = data_summary,
+        skip_reason = "insufficient_group_size"
+      )
+    } else {
+      fit_rows[[data_set_attempt]] <- fit_one_data_set(
+        replicate_index = replicate_index,
+        data_set_index = data_set_index,
+        data_set_attempt = data_set_attempt,
+        data = data,
+        true_beta = true_beta,
+        true_gamma = true_gamma,
+        data_summary = data_summary
+      )
+    }
 
-        result_row(
-          base_result_columns(
-            replicate_index = replicate_index,
-            data_set_index = data_set_index,
-            start_index = start_index,
-            true_beta = true_beta,
-            true_gamma = true_gamma,
-            gamma_start = gamma_start,
-            data_summary = data_summary,
-            skipped = FALSE,
-            skip_reason = NA_character_,
-            converged = TRUE,
-            error = NA_character_
-          ),
-          fit_metric_columns(summary$beta, summary$gamma, true_beta, true_gamma)
-        )
-      },
-      error = function(err) {
-        result_row(
-          base_result_columns(
-            replicate_index = replicate_index,
-            data_set_index = data_set_index,
-            start_index = start_index,
-            true_beta = true_beta,
-            true_gamma = true_gamma,
-            gamma_start = gamma_start,
-            data_summary = data_summary,
-            skipped = FALSE,
-            skip_reason = NA_character_,
-            converged = FALSE,
-            error = conditionMessage(err)
-          ),
-          empty_fit_metric_columns()
-        )
-      }
-    )
-
-    if (isTRUE(fit_rows[[start_index]]$converged)) {
+    if (isTRUE(fit_rows[[data_set_attempt]]$converged)) {
       break
     }
   }
 
   do.call(rbind, fit_rows)
-}
-
-simulate_data_set <- function(replicate_index, data_set_index) {
-  data <- simulate_from_true_parameters(true_beta, true_gamma)
-  data_summary <- summarize_simulated_data(data, true_gamma)
-
-  if (!all(data_summary$group_sizes >= min_group_size)) {
-    return(skipped_data_set_row(
-      replicate_index = replicate_index,
-      data_set_index = data_set_index,
-      true_beta = true_beta,
-      true_gamma = true_gamma,
-      data_summary = data_summary,
-      skip_reason = "insufficient_group_size"
-    ))
-  }
-
-  fit_one_data_set(
-    replicate_index = replicate_index,
-    data_set_index = data_set_index,
-    data = data,
-    true_beta = true_beta,
-    true_gamma = true_gamma,
-    data_summary = data_summary
-  )
 }
 
 study_rows <- vector("list", args$n_data_sets)

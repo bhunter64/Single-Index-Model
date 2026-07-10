@@ -2,7 +2,7 @@ test_that("threshold model records fixed-parameter simulation study results", {
 
   n_data_sets <- 10 # Number of data sets to simulate for the simulation
   min_group_size <- 60 # Appropriate portions for convergence
-  max_start_attempts <- 100 # How many times to try fitting each set
+  max_data_set_attempts <- 100 # How many times to regenerate each set after failed fitting
   n_biomarkers <- 2 # Number of biomarkers in each set
 
   true_beta <- c(log(1.5), log(1.2), log(2))
@@ -86,6 +86,7 @@ test_that("threshold model records fixed-parameter simulation study results", {
   }
 
   base_result_columns <- function(data_set_index,
+                                  data_set_attempt,
                                   start_index,
                                   true_beta,
                                   true_gamma,
@@ -97,6 +98,7 @@ test_that("threshold model records fixed-parameter simulation study results", {
                                   error) {
     data.frame(
       data_set_index = data_set_index,
+      data_set_attempt = data_set_attempt,
       start_index = start_index,
       true_beta_1 = true_beta[1],
       true_beta_2 = true_beta[2],
@@ -120,11 +122,12 @@ test_that("threshold model records fixed-parameter simulation study results", {
     data.frame(base_columns, as.list(metric_columns), check.names = FALSE)
   }
 
-  # If a data set can't get a start after `max_start_attempts` of gamma, it gets a skipped-data-set
-  skipped_data_set_row <- function(data_set_index, true_beta, true_gamma, data_summary, skip_reason) {
+  # If a data set can't fit after `max_data_set_attempts` regenerated data sets, it gets a skipped-data-set
+  skipped_data_set_row <- function(data_set_index, data_set_attempt, true_beta, true_gamma, data_summary, skip_reason) {
     result_row(
       base_result_columns(
         data_set_index = data_set_index,
+        data_set_attempt = data_set_attempt,
         start_index = NA_integer_,
         true_beta = true_beta,
         true_gamma = true_gamma,
@@ -141,85 +144,90 @@ test_that("threshold model records fixed-parameter simulation study results", {
 
   # Helper (wrapper) to make each data set
   simulate_data_set <- function(data_set_index) {
-    data <- simulate_from_true_parameters(true_beta, true_gamma)
-    data_summary <- summarize_simulated_data(data, true_gamma)
-
-    if (!all(data_summary$group_sizes >= min_group_size)) {
-      return(skipped_data_set_row(
-        data_set_index = data_set_index,
-        true_beta = true_beta,
-        true_gamma = true_gamma,
-        data_summary = data_summary,
-        skip_reason = "insufficient_group_size"
-      ))
-    }
-
-    fit_one_data_set(
-      data_set_index = data_set_index,
-      data = data,
-      true_beta = true_beta,
-      true_gamma = true_gamma,
-      data_summary = data_summary
-    )
-  }
-
-  fit_one_data_set <- function(data_set_index, data, true_beta, true_gamma, data_summary) {
     fit_rows <- list()
 
-    for (start_index in seq_len(max_start_attempts)) {
-      gamma_start <- gamma_start_values
+    for (data_set_attempt in seq_len(max_data_set_attempts)) {
+      data <- simulate_from_true_parameters(true_beta, true_gamma)
+      data_summary <- summarize_simulated_data(data, true_gamma)
 
-      fit_rows[[start_index]] <- tryCatch(
-        {
-          posterior <- suppressWarnings(fit_threshold_model(
-            data = data,
-            control = control,
-            lambda = 0,
-            gamma_start = gamma_start
-          ))
-          summary <- summarize_mcmc(posterior)
+      if (!all(data_summary$group_sizes >= min_group_size)) {
+        fit_rows[[data_set_attempt]] <- skipped_data_set_row(
+          data_set_index = data_set_index,
+          data_set_attempt = data_set_attempt,
+          true_beta = true_beta,
+          true_gamma = true_gamma,
+          data_summary = data_summary,
+          skip_reason = "insufficient_group_size"
+        )
+      } else {
+        fit_rows[[data_set_attempt]] <- fit_one_data_set(
+          data_set_index = data_set_index,
+          data_set_attempt = data_set_attempt,
+          data = data,
+          true_beta = true_beta,
+          true_gamma = true_gamma,
+          data_summary = data_summary
+        )
+      }
 
-          result_row(
-            base_result_columns(
-              data_set_index = data_set_index,
-              start_index = start_index,
-              true_beta = true_beta,
-              true_gamma = true_gamma,
-              gamma_start = gamma_start,
-              data_summary = data_summary,
-              skipped = FALSE,
-              skip_reason = NA_character_,
-              converged = TRUE,
-              error = NA_character_
-            ),
-            fit_metric_columns(summary$beta, summary$gamma, true_beta, true_gamma)
-          )
-        },
-        error = function(err) {
-          result_row(
-            base_result_columns(
-              data_set_index = data_set_index,
-              start_index = start_index,
-              true_beta = true_beta,
-              true_gamma = true_gamma,
-              gamma_start = gamma_start,
-              data_summary = data_summary,
-              skipped = FALSE,
-              skip_reason = NA_character_,
-              converged = FALSE,
-              error = conditionMessage(err)
-            ),
-            empty_fit_metric_columns()
-          )
-        }
-      )
-
-      if (isTRUE(fit_rows[[start_index]]$converged)) {
+      if (isTRUE(fit_rows[[data_set_attempt]]$converged)) {
         break
       }
     }
 
     do.call(rbind, fit_rows)
+  }
+
+  fit_one_data_set <- function(data_set_index, data_set_attempt, data, true_beta, true_gamma, data_summary) {
+    start_index <- 1L
+    gamma_start <- gamma_start_values
+
+    tryCatch(
+      {
+        posterior <- suppressWarnings(fit_threshold_model(
+          data = data,
+          control = control,
+          lambda = 0,
+          gamma_start = gamma_start
+        ))
+        summary <- summarize_mcmc(posterior)
+
+        result_row(
+          base_result_columns(
+            data_set_index = data_set_index,
+            data_set_attempt = data_set_attempt,
+            start_index = start_index,
+            true_beta = true_beta,
+            true_gamma = true_gamma,
+            gamma_start = gamma_start,
+            data_summary = data_summary,
+            skipped = FALSE,
+            skip_reason = NA_character_,
+            converged = TRUE,
+            error = NA_character_
+          ),
+          fit_metric_columns(summary$beta, summary$gamma, true_beta, true_gamma)
+        )
+      },
+      error = function(err) {
+        result_row(
+          base_result_columns(
+            data_set_index = data_set_index,
+            data_set_attempt = data_set_attempt,
+            start_index = start_index,
+            true_beta = true_beta,
+            true_gamma = true_gamma,
+            gamma_start = gamma_start,
+            data_summary = data_summary,
+            skipped = FALSE,
+            skip_reason = NA_character_,
+            converged = FALSE,
+            error = conditionMessage(err)
+          ),
+          empty_fit_metric_columns()
+        )
+      }
+    )
   }
 
   study_rows <- vector("list", n_data_sets)
@@ -339,7 +347,7 @@ test_that("threshold model records fixed-parameter simulation study results", {
   expect_true(all(fitted_rows$gamma_start_2 == gamma_start_values[2]))
   expect_true(all(table(successful_fits$data_set_index) == 1))
   if (nrow(fitted_rows) > 0) {
-    expect_lte(max(fitted_rows$start_index), max_start_attempts)
+    expect_lte(max(fitted_rows$data_set_attempt), max_data_set_attempts)
   }
   expect_true(all(successful_fits$treated_above >= min_group_size))
   expect_true(all(successful_fits$treated_below >= min_group_size))
