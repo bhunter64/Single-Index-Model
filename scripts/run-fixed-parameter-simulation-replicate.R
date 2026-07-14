@@ -3,8 +3,9 @@
 parse_args <- function(args) {
   values <- list(
     replicate_index = Sys.getenv("SLURM_ARRAY_TASK_ID", unset = "1"),
+    data_n = "600",
     n_data_sets = "10",
-    output_dir = "results/fixed-parameter-simulation",
+    output_dir = NA_character_,
     max_data_set_attempts = "100",
     samples = "20000",
     burn_in = "10000",
@@ -16,6 +17,7 @@ parse_args <- function(args) {
     arg <- args[[index]]
     if (arg %in% c(
       "--replicate-index",
+      "--data-n",
       "--n-data-sets",
       "--output-dir",
       "--max-data-set-attempts",
@@ -32,11 +34,15 @@ parse_args <- function(args) {
   }
 
   values$replicate_index <- as.integer(values$replicate_index)
+  values$data_n <- as.integer(values$data_n)
   values$n_data_sets <- as.integer(values$n_data_sets)
   values$max_data_set_attempts <- as.integer(values$max_data_set_attempts)
   values$samples <- as.integer(values$samples)
   values$burn_in <- as.integer(values$burn_in)
   values$thin <- as.integer(values$thin)
+  if (is.na(values$output_dir)) {
+    values$output_dir <- sprintf("results/fixed-parameter-simulation-n%d", values$data_n)
+  }
   values
 }
 
@@ -70,7 +76,7 @@ control <- default_mcmc_control(
 
 simulate_from_true_parameters <- function(true_beta, true_gamma) {
   simulate_threshold_data(
-    n = 600,
+    n = args$data_n,
     beta = true_beta,
     gamma = true_gamma,
     baseline_hazard = 1,
@@ -148,6 +154,7 @@ base_result_columns <- function(replicate_index,
                                 error) {
   data.frame(
     replicate_index = replicate_index,
+    data_n = args$data_n,
     data_set_index = data_set_index,
     global_data_set_index = (replicate_index - 1L) * args$n_data_sets + data_set_index,
     data_set_attempt = data_set_attempt,
