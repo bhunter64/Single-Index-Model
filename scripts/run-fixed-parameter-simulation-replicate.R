@@ -120,23 +120,67 @@ empty_bias_metric_row <- function(parameter_prefix) {
   )
 }
 
-fit_metric_columns <- function(beta_values, gamma_values, true_beta, true_gamma) {
+coverage_metric_row <- function(parameter_prefix, interval, truth) {
+  interval_lower <- interval[1]
+  interval_upper <- interval[2]
+  covered <- interval_lower <= truth && truth <= interval_upper
+
+  stats::setNames(
+    c(
+      interval_lower,
+      interval_upper,
+      covered
+    ),
+    c(
+      paste0(parameter_prefix, "_interval_lower"),
+      paste0(parameter_prefix, "_interval_upper"),
+      paste0(parameter_prefix, "_covered")
+    )
+  )
+}
+
+empty_coverage_metric_row <- function(parameter_prefix) {
+  stats::setNames(
+    rep(NA_real_, 3),
+    c(
+      paste0(parameter_prefix, "_interval_lower"),
+      paste0(parameter_prefix, "_interval_upper"),
+      paste0(parameter_prefix, "_covered")
+    )
+  )
+}
+
+parameter_metric_row <- function(parameter_prefix, value, interval, truth) {
   c(
-    bias_metric_row("beta_1", beta_values[1], true_beta[1]),
-    bias_metric_row("beta_2", beta_values[2], true_beta[2]),
-    bias_metric_row("beta_3", beta_values[3], true_beta[3]),
-    bias_metric_row("gamma_1", gamma_values[1], true_gamma[1]),
-    bias_metric_row("gamma_2", gamma_values[2], true_gamma[2])
+    bias_metric_row(parameter_prefix, value, truth),
+    coverage_metric_row(parameter_prefix, interval, truth)
+  )
+}
+
+empty_parameter_metric_row <- function(parameter_prefix) {
+  c(
+    empty_bias_metric_row(parameter_prefix),
+    empty_coverage_metric_row(parameter_prefix)
+  )
+}
+
+fit_metric_columns <- function(summary, true_beta, true_gamma) {
+  c(
+    parameter_metric_row("beta_1", summary$beta[1], summary$beta_interval[, 1], true_beta[1]),
+    parameter_metric_row("beta_2", summary$beta[2], summary$beta_interval[, 2], true_beta[2]),
+    parameter_metric_row("beta_3", summary$beta[3], summary$beta_interval[, 3], true_beta[3]),
+    parameter_metric_row("gamma_1", summary$gamma[1], summary$gamma_interval[, 1], true_gamma[1]),
+    parameter_metric_row("gamma_2", summary$gamma[2], summary$gamma_interval[, 2], true_gamma[2])
   )
 }
 
 empty_fit_metric_columns <- function() {
   c(
-    empty_bias_metric_row("beta_1"),
-    empty_bias_metric_row("beta_2"),
-    empty_bias_metric_row("beta_3"),
-    empty_bias_metric_row("gamma_1"),
-    empty_bias_metric_row("gamma_2")
+    empty_parameter_metric_row("beta_1"),
+    empty_parameter_metric_row("beta_2"),
+    empty_parameter_metric_row("beta_3"),
+    empty_parameter_metric_row("gamma_1"),
+    empty_parameter_metric_row("gamma_2")
   )
 }
 
@@ -236,7 +280,7 @@ fit_one_data_set <- function(replicate_index, data_set_index, data_set_attempt, 
           converged = TRUE,
           error = NA_character_
         ),
-        fit_metric_columns(summary$beta, summary$gamma, true_beta, true_gamma)
+        fit_metric_columns(summary, true_beta, true_gamma)
       )
     },
     error = function(err) {
