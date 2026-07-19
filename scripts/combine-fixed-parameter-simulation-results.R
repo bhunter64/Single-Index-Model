@@ -28,6 +28,14 @@ coverage_mean <- function(fits, coverage_column) {
   mean(fits[[coverage_column]], na.rm = TRUE)
 }
 
+censoring_mean <- function(fits) {
+  if (!"censoring_proportion" %in% names(fits)) {
+    return(NA_real_)
+  }
+
+  mean(fits$censoring_proportion, na.rm = TRUE)
+}
+
 summary_for <- function(fits, parameters, bias_columns, coverage_columns) {
   data.frame(
     parameter = parameters,
@@ -57,7 +65,9 @@ convergence_summary <- data.frame(
   n_skipped = sum(results$skipped),
   n_fit_attempted = nrow(fitted_rows),
   n_successful = nrow(successful_fits),
-  convergence_rate = nrow(successful_fits) / nrow(fitted_rows)
+  convergence_rate = nrow(successful_fits) / nrow(fitted_rows),
+  censoring_proportion = censoring_mean(results),
+  successful_fit_censoring_proportion = censoring_mean(successful_fits)
 )
 
 message("wrote ", output_file)
