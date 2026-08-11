@@ -12,7 +12,8 @@ fit_threshold_model(
   time_col = "time",
   status_col = "status",
   treatment_col = "treatment",
-  biomarker_cols = NULL
+  biomarker_cols = NULL,
+  beta_start = NULL
 )
 }
 \arguments{
@@ -32,6 +33,10 @@ biomarker columns.}
 \item{treatment_col}{Column name for treatment.}
 
 \item{biomarker_cols}{Optional column names or indices for biomarkers.}
+
+\item{beta_start}{Optional initial three-vector for the treatment, subgroup,
+and treatment-by-subgroup coefficients. When omitted, the coefficients are
+initialized from a Cox model at \code{gamma_start}.}
 }
 \value{
 Posterior samples from \code{fit_threshold_mcmc()}.

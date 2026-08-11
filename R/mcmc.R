@@ -142,6 +142,9 @@ mcmc_step <- function(x,
 #' @param gamma_start Optional initial gamma vector.
 #' @param treatment_col Column name or index for the treatment indicator.
 #' @param biomarker_cols Optional column names or indices for biomarkers.
+#' @param beta_start Optional initial three-vector for the treatment, subgroup,
+#'   and treatment-by-subgroup coefficients. When omitted, the coefficients are
+#'   initialized from a Cox model at `gamma_start`.
 #'
 #' @return Posterior samples for beta, gamma, and log likelihood.
 #' @export
@@ -151,7 +154,8 @@ fit_threshold_mcmc <- function(x,
                                lambda = 0,
                                gamma_start = NULL,
                                treatment_col = 1,
-                               biomarker_cols = NULL) {
+                               biomarker_cols = NULL,
+                               beta_start = NULL) {
   if (lambda < 0) {
     stop("lambda must be nonnegative", call. = FALSE)
   }
@@ -165,7 +169,15 @@ fit_threshold_mcmc <- function(x,
   } else {
     validate_gamma(gamma_start, n_biomarkers)
   }
-  beta <- initialize_beta(x, y, gamma, treatment_col, biomarker_cols)
+  beta <- if (is.null(beta_start)) {
+    initialize_beta(x, y, gamma, treatment_col, biomarker_cols)
+  } else {
+    beta_start <- as.numeric(beta_start)
+    if (length(beta_start) != 3L || anyNA(beta_start) || any(!is.finite(beta_start))) {
+      stop("beta_start must contain three finite numeric values", call. = FALSE)
+    }
+    beta_start
+  }
   state <- list(beta = beta, gamma = gamma)
 
   for (i in seq_len(control$burn_in)) {
@@ -229,6 +241,9 @@ fit_threshold_mcmc <- function(x,
 #' @param status_col Column name for event status.
 #' @param treatment_col Column name for treatment.
 #' @param biomarker_cols Optional column names or indices for biomarkers.
+#' @param beta_start Optional initial three-vector for the treatment, subgroup,
+#'   and treatment-by-subgroup coefficients. When omitted, the coefficients are
+#'   initialized from a Cox model at `gamma_start`.
 #'
 #' @return Posterior samples from `fit_threshold_mcmc()`.
 #' @export
@@ -239,7 +254,8 @@ fit_threshold_model <- function(data,
                                 time_col = "time",
                                 status_col = "status",
                                 treatment_col = "treatment",
-                                biomarker_cols = NULL) {
+                                biomarker_cols = NULL,
+                                beta_start = NULL) {
   data <- as.data.frame(data)
 
   # check for basic columns
@@ -270,7 +286,8 @@ fit_threshold_model <- function(data,
     lambda = lambda,
     gamma_start = gamma_start,
     treatment_col = 1,
-    biomarker_cols = seq_len(length(biomarker_cols)) + 1
+    biomarker_cols = seq_len(length(biomarker_cols)) + 1,
+    beta_start = beta_start
   ))
 }
 

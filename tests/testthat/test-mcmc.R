@@ -101,6 +101,34 @@ test_that("fit_threshold_mcmc rejects invalid inputs", {
     fit_threshold_mcmc(x, y, control = control, gamma_start = 0.1),
     "one coefficient per biomarker"
   )
+  expect_error(
+    fit_threshold_mcmc(x, y, control = control, gamma_start = c(0.4, 0.6), beta_start = c(1, 2)),
+    "three finite"
+  )
+})
+
+test_that("fit_threshold_mcmc accepts explicit beta starting values", {
+  set.seed(3004)
+  data <- simulate_threshold_data(
+    n = 80,
+    beta = c(log(1.4), log(1.2), log(1.3)),
+    gamma = c(0.4, 0.6),
+    study_end_range = c(0.5, 3)
+  )
+  sorted <- sort(data$time, decreasing = TRUE, index.return = TRUE)
+  x <- data[sorted$ix, c("treatment", "bio_1", "bio_2")]
+  y <- survival::Surv(data$time, data$status)[sorted$ix, ]
+
+  posterior <- fit_threshold_mcmc(
+    x,
+    y,
+    control = default_mcmc_control(samples = 2, burn_in = 0, thin = 1),
+    gamma_start = c(0.4, 0.6),
+    beta_start = c(0, 0, 0)
+  )
+
+  expect_equal(dim(posterior$beta_samples), c(3L, 2L))
+  expect_true(all(is.finite(posterior$beta_samples)))
 })
 
 test_that("summarize_mcmc supports mean and median summaries", {
