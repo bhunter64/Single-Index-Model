@@ -96,12 +96,24 @@ mcmc_step <- function(x,
 
   fit <- fit_threshold_cox(x, y, gamma, treatment_col, biomarker_cols)
 
-  if (inherits(fit, "warning")) {
+  if (!isTRUE(fit$converged)) {
     beta <- previous$beta
     gamma <- previous$gamma
   } else {
     beta_loglik <- current_log_likelihood
-    beta_candidate <- as.vector(mvtnorm::rmvnorm(1, beta, stats::vcov(fit)))
+    covariance <- tryCatch(stats::vcov(fit), error = function(error) NULL)
+    beta_candidate <- if (
+      is.null(covariance) ||
+        !all(dim(covariance) == c(length(beta), length(beta))) ||
+        any(!is.finite(covariance))
+    ) {
+      rep(NA_real_, length(beta))
+    } else {
+      tryCatch(
+        suppressWarnings(as.vector(mvtnorm::rmvnorm(1, beta, covariance))),
+        error = function(error) rep(NA_real_, length(beta))
+      )
+    }
     if (all(is.finite(beta_candidate))) {
       candidate_loglik <- cox_threshold_loglik(
         x,

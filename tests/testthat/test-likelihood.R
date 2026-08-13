@@ -50,6 +50,31 @@ test_that("fit_threshold_cox returns a converged Cox model on simulated data", {
   expect_true(all(is.finite(stats::coef(fit))))
 })
 
+test_that("fit_threshold_cox returns a failed fit instead of erroring for a degenerate subgroup", {
+  x <- data.frame(
+    treatment = rep(c(0, 1), each = 10),
+    biomarker = rep(10, 20)
+  )
+  y <- survival::Surv(seq(20, 1), rep(1, 20))
+
+  fit <- suppressWarnings(fit_threshold_cox(x, y, gamma = 1))
+
+  expect_false(isTRUE(fit$converged))
+  expect_s3_class(fit, "condition")
+})
+
+test_that("cox_threshold_loglik remains finite for large finite coefficients", {
+  x <- data.frame(
+    treatment = rep(c(0, 1), 5),
+    biomarker = seq(-2, 2, length.out = 10)
+  )
+  y <- survival::Surv(seq(10, 1), rep(1, 10))
+
+  value <- cox_threshold_loglik(x, y, beta = c(1000, -1000, 1000), gamma = 1)
+
+  expect_true(is.finite(value))
+})
+
 test_that("initialize_beta returns the Cox coefficients and validates gamma", {
   set.seed(2002)
   data <- simulate_threshold_data(

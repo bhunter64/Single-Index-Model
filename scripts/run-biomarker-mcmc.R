@@ -381,7 +381,17 @@ if (.Platform$OS.type == "unix" && workers > 1L) {
   posteriors <- lapply(seq_len(args$chains), fit_chain)
 }
 failed <- vapply(posteriors, inherits, logical(1), what = "try-error")
-if (any(failed)) stop("one or more MCMC chains failed", call. = FALSE)
+if (any(failed)) {
+  failed_chains <- which(failed)
+  messages <- vapply(failed_chains, function(index) {
+    paste0("chain ", index, ": ", as.character(posteriors[[index]]))
+  }, character(1))
+  stop(
+    "one or more MCMC chains failed:\n",
+    paste(messages, collapse = "\n"),
+    call. = FALSE
+  )
+}
 
 arrays <- posterior_arrays(posteriors, beta_names, gamma_names)
 starts <- c(beta_start, args$gamma_start)

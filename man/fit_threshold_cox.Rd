@@ -20,7 +20,7 @@ columns.}
 }
 \value{
 A \code{coxph} fit with an added logical \code{converged} field. If \code{coxph}
-warns, the warning object is returned with \code{converged = FALSE}.
+warns or errors, the condition is returned with \code{converged = FALSE}.
 }
 \description{
 Fit the betas in the Cox model for a given gamma.

@@ -24,8 +24,17 @@ cox_threshold_loglik <- function(x,
     biomarker_cols = biomarker_cols
   )
 
-  linear_predictor <- as.matrix(design) %*% beta
-  risk_cusum <- log(cumsum(exp(linear_predictor)))
+  linear_predictor <- as.vector(as.matrix(design) %*% beta)
+  risk_cusum <- numeric(length(linear_predictor))
+  risk_cusum[1L] <- linear_predictor[1L]
+  if (length(linear_predictor) > 1L) {
+    for (index in 2:length(linear_predictor)) {
+      previous <- risk_cusum[index - 1L]
+      current <- linear_predictor[index]
+      maximum <- max(previous, current)
+      risk_cusum[index] <- maximum + log(exp(previous - maximum) + exp(current - maximum))
+    }
+  }
   return(as.numeric(sum(y[, 2] * (linear_predictor - risk_cusum))))
 }
 
@@ -39,7 +48,7 @@ cox_threshold_loglik <- function(x,
 #' @param biomarker_cols Optional column names or indices for biomarkers.
 #'
 #' @return A `coxph` fit with an added logical `converged` field. If `coxph`
-#'   warns, the warning object is returned with `converged = FALSE`.
+#'   warns or errors, the condition is returned with `converged = FALSE`.
 #' @export
 fit_threshold_cox <- function(x,
                               y,
@@ -60,12 +69,13 @@ fit_threshold_cox <- function(x,
       data = design,
       control = survival::coxph.control(iter.max = 1000), singular.ok = FALSE
     ),
-    warning = function(w) w
+    warning = function(w) w,
+    error = function(e) e
   )
 
-  if (inherits(fit, "warning")) {
+  if (inherits(fit, "condition")) {
     warning(
-      "cox regression failed to converge on beta sampling: ",
+      "cox regression could not be used for beta sampling: ",
       conditionMessage(fit),
       call. = FALSE
     )
