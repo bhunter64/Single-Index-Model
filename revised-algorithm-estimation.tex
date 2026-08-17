@@ -1,0 +1,304 @@
+We use the following notation to make the methodology more concise. For
+subject $i$, let
+\[
+    s_i(\boldsymbol\gamma)
+    =
+    1+\mathbf{x}_i^\top\boldsymbol\gamma,
+    \qquad
+    g_i(\boldsymbol\gamma)
+    =
+    I\{s_i(\boldsymbol\gamma)\geq 0\},
+\]
+and define
+\[
+    Z_i(\boldsymbol\gamma)
+    =
+    \left(
+        a_i,
+        g_i(\boldsymbol\gamma),
+        a_i g_i(\boldsymbol\gamma)
+    \right)^\top,
+\]
+where $a_i$ is the treatment indicator and $\mathbf{x}_i$ is the vector of
+$p$ biomarkers. The Cox partial likelihood, conditional on
+$\boldsymbol\gamma$, is
+\begin{equation}
+\label{eq:partialLikFixedThreshold}
+    L(\boldsymbol\beta\mid\boldsymbol\gamma)
+    =
+    \prod_{i=1}^{n}
+    \left[
+        \frac{
+            \exp\{Z_i(\boldsymbol\gamma)^\top\boldsymbol\beta\}
+        }{
+            \displaystyle\sum_{j\in R(t_i)}
+            \exp\{Z_j(\boldsymbol\gamma)^\top\boldsymbol\beta\}
+        }
+    \right]^{\delta_i},
+\end{equation}
+where $R(t_i)$ is the index set of subjects at risk immediately before time
+$t_i$, and $\delta_i$ is the event indicator.
+
+We assign independent normal priors to the components of
+$\boldsymbol\gamma$. In particular,
+\[
+    \gamma_\ell\sim N(\mu_\ell,\sigma_\ell^2),
+    \qquad \ell=1,\ldots,p,
+\]
+so that, with
+$\boldsymbol\mu=(\mu_1,\ldots,\mu_p)^\top$ and
+$\Sigma=\operatorname{diag}(\sigma_1^2,\ldots,\sigma_p^2)$,
+\begin{equation}
+\label{eq:gammaPriorFixedThreshold}
+    L(\boldsymbol\gamma\mid\boldsymbol\mu,\Sigma)
+    =
+    \prod_{\ell=1}^{p}
+    \frac{1}{\sqrt{2\pi\sigma_\ell^2}}
+    \exp\left\{
+        -\frac{(\gamma_\ell-\mu_\ell)^2}{2\sigma_\ell^2}
+    \right\}.
+\end{equation}
+The common-variance specification follows by setting
+$\sigma_\ell^2=\sigma^2$ for every $\ell$. Under a flat prior for
+$\boldsymbol\beta$, the resulting posterior based on the Cox partial
+likelihood is
+\begin{equation}
+\label{eq:posteriorFixedThreshold}
+    \pi(\boldsymbol\beta,\boldsymbol\gamma\mid\textbf{data})
+    \propto
+    L(\boldsymbol\beta\mid\boldsymbol\gamma)
+    L(\boldsymbol\gamma\mid\boldsymbol\mu,\Sigma).
+\end{equation}
+When biomarker shrinkage is desired, we use the penalized target
+\begin{equation}
+\label{eq:penalizedPosteriorFixedThreshold}
+    \pi_\lambda(\boldsymbol\beta,\boldsymbol\gamma
+    \mid\textbf{data})
+    \propto
+    L(\boldsymbol\beta\mid\boldsymbol\gamma)
+    L(\boldsymbol\gamma\mid\boldsymbol\mu,\Sigma)
+    \exp\left\{-\lambda\sum_{\ell=1}^{p}|\gamma_\ell|\right\},
+    \qquad \lambda\geq 0.
+\end{equation}
+Thus, $\lambda=0$ gives the unpenalized posterior in
+Equation~\ref{eq:posteriorFixedThreshold}, whereas larger values of
+$\lambda$ produce stronger shrinkage of the biomarker coefficients.
+
+We sample from Equation~\ref{eq:penalizedPosteriorFixedThreshold} using a
+Metropolis-within-Gibbs algorithm. Let $R$ denote the number of retained
+posterior draws, $B$ the number of burn-in iterations, and $TN$ the thinning
+interval. The sampler therefore performs $B+R\times TN$ iterations. The first
+$B$ draws are discarded and, thereafter, every $TN$th draw is retained.
+Algorithm~\ref{al:mcmcAlgo} outlines the sampling procedure.
+
+\begin{algorithm}[p]
+\large
+\SetAlgoLined
+\DontPrintSemicolon
+
+\textbf{Initialisation:}
+Draw or set $\boldsymbol\gamma_0$. Given $\boldsymbol\gamma_0$, initialise
+$\boldsymbol\beta_0$ by fitting the Cox model with covariates
+$Z_i(\boldsymbol\gamma_0)$\;
+
+\For{$k=0,\ldots,B+R\times TN-1$}{
+    Set $\widetilde{\boldsymbol\gamma}^{(0)}=\boldsymbol\gamma_k$\;
+
+    \For{$\ell=1,\ldots,p$}{
+        Propose
+        $\gamma_\ell^*\sim
+        N(\widetilde{\gamma}^{(\ell-1)}_\ell,\tau_\ell^2)$ and form
+        $\boldsymbol\gamma^*$ by replacing the $\ell$th component of
+        $\widetilde{\boldsymbol\gamma}^{(\ell-1)}$ with
+        $\gamma_\ell^*$\;
+
+        Define
+        \[
+            h(\boldsymbol\gamma\mid\boldsymbol\beta_k)
+            =
+            \log L(\boldsymbol\beta_k\mid\boldsymbol\gamma)
+            +
+            \sum_{r=1}^{p}\log
+            \phi(\gamma_r;\mu_r,\sigma_r^2)
+            -
+            \lambda\sum_{r=1}^{p}|\gamma_r|,
+        \]
+        where $\phi(\,\cdot\,;\mu_r,\sigma_r^2)$ is the normal prior
+        density\;
+
+        Accept $\boldsymbol\gamma^*$ with probability
+        \[
+            \alpha_{\gamma,\ell}
+            =
+            \min\left\{
+                1,
+                \exp\left[
+                    h(\boldsymbol\gamma^*\mid\boldsymbol\beta_k)
+                    -
+                    h(\widetilde{\boldsymbol\gamma}^{(\ell-1)}
+                    \mid\boldsymbol\beta_k)
+                \right]
+            \right\}.
+        \]
+
+        If the proposal is accepted, set
+        $\widetilde{\boldsymbol\gamma}^{(\ell)}
+        =\boldsymbol\gamma^*$; otherwise, set
+        $\widetilde{\boldsymbol\gamma}^{(\ell)}
+        =\widetilde{\boldsymbol\gamma}^{(\ell-1)}$\;
+    }
+
+    Set $\boldsymbol\gamma^\dagger
+    =\widetilde{\boldsymbol\gamma}^{(p)}$. Given
+    $\boldsymbol\gamma^\dagger$, fit the Cox model with covariates
+    $Z_i(\boldsymbol\gamma^\dagger)$ and obtain the covariance estimate
+    $\widehat{\Sigma}_{k+1}$\;
+
+    \eIf{the Cox fit converges}{
+        Set $\boldsymbol\gamma_{k+1}=\boldsymbol\gamma^\dagger$\;
+
+        \eIf{$\widehat{\Sigma}_{k+1}$ is finite}{
+            Propose
+            $\boldsymbol\beta^*\sim
+            N(\boldsymbol\beta_k,\widehat{\Sigma}_{k+1})$\;
+
+            Accept $\boldsymbol\beta^*$ with probability
+            \[
+                \alpha_\beta
+                =
+                \min\left\{
+                    1,
+                    \frac{
+                        L(\boldsymbol\beta^*\mid\boldsymbol\gamma^\dagger)
+                    }{
+                        L(\boldsymbol\beta_k\mid\boldsymbol\gamma^\dagger)
+                    }
+                \right\}.
+            \]
+
+            Set $\boldsymbol\beta_{k+1}=\boldsymbol\beta^*$ if the proposal
+            is accepted; otherwise set
+            $\boldsymbol\beta_{k+1}=\boldsymbol\beta_k$\;
+        }{
+            Set $\boldsymbol\beta_{k+1}=\boldsymbol\beta_k$\;
+        }
+    }{
+        Set $(\boldsymbol\beta_{k+1},\boldsymbol\gamma_{k+1})
+        =(\boldsymbol\beta_k,\boldsymbol\gamma_k)$\;
+    }
+
+    After burn-in, retain every $TN$th draw until $R$ posterior samples are
+    stored\;
+}
+
+\caption{Metropolis--Hastings sampler for the fixed-threshold single-index
+Cox model.}
+\KwResult{Posterior samples of $\boldsymbol\beta$,
+$\boldsymbol\gamma$, and the log partial likelihood.}
+\label{al:mcmcAlgo}
+\end{algorithm}
+
+We give a detailed explanation of the steps in
+Algorithm~\ref{al:mcmcAlgo} below.
+
+\textbf{Parameter initialisation:}
+The initial value $\boldsymbol\gamma_0$ may be supplied using prior scientific
+knowledge or drawn from the normal prior in
+Equation~\ref{eq:gammaPriorFixedThreshold}. Once
+$\boldsymbol\gamma_0$ has been selected, the subgroup indicators
+$g_i(\boldsymbol\gamma_0)$ and design vectors
+$Z_i(\boldsymbol\gamma_0)$ are computed. The initial value
+$\boldsymbol\beta_0$ is then obtained from the partial likelihood estimate in
+the Cox model with these design vectors. In this formulation, no separate
+cut-point is updated: the threshold is fixed at zero and the intercept in the
+single-index score is fixed at one.
+
+\textbf{Step 1:}
+Each component of $\boldsymbol\gamma$ is updated in turn using a normal
+random-walk proposal. Here, $\tau_\ell^2$ is the proposal variance and is
+distinct from the prior variance $\sigma_\ell^2$. The proposal is centered at
+the current value of the $\ell$th component, whereas $\mu_\ell$ is the fixed
+prior mean. Because the random-walk proposal is symmetric, its density cancels
+from the Metropolis--Hastings ratio. The acceptance probability therefore
+depends only on the difference between the proposed and current values of the
+penalized log-posterior kernel $h$. The subgroup indicators, and hence the Cox
+partial likelihood, are recomputed after each proposed component update.
+
+\textbf{Step 2:}
+After all components of $\boldsymbol\gamma$ have been updated, a Cox model is
+fit using $Z_i(\boldsymbol\gamma^\dagger)$. Its estimated covariance matrix is
+used to scale a multivariate normal random-walk proposal for
+$\boldsymbol\beta$. Conditional on $\boldsymbol\gamma^\dagger$, this proposal
+is symmetric and the prior on $\boldsymbol\beta$ is flat, so the acceptance
+probability reduces to the ratio of Cox partial likelihoods shown in the
+algorithm. If the Cox fit fails to converge, both parameter vectors are
+returned to their values at the start of the iteration. If the Cox fit
+succeeds but its covariance estimate is unusable, or if the proposed
+$\boldsymbol\beta^*$ is rejected, the updated
+$\boldsymbol\gamma^\dagger$ is retained and $\boldsymbol\beta$ remains
+unchanged.
+
+\subsection{Estimation}
+
+Let
+$\{(\boldsymbol\beta^{(r)},\boldsymbol\gamma^{(r)}):r=1,\ldots,R\}$
+denote the retained posterior draws after burn-in and thinning. We use the
+posterior means as the default point estimates,
+\begin{equation}
+\label{eq:posteriorMeanEstimates}
+    \widehat{\boldsymbol\beta}
+    =
+    \frac{1}{R}\sum_{r=1}^{R}\boldsymbol\beta^{(r)},
+    \qquad
+    \widehat{\boldsymbol\gamma}
+    =
+    \frac{1}{R}\sum_{r=1}^{R}\boldsymbol\gamma^{(r)}.
+\end{equation}
+Posterior medians may be reported instead when a marginal posterior is notably
+skewed.
+
+Equal-tailed credible intervals are obtained directly from the empirical
+posterior distribution. For any scalar parameter $\eta$, let
+\[
+    \widehat F_R(w)
+    =
+    \frac{1}{R}\sum_{r=1}^{R}I\{\eta^{(r)}\leq w\},
+    \qquad
+    \widehat Q_R(u)
+    =
+    \inf\{w:\widehat F_R(w)\geq u\}.
+\]
+The $100(1-\alpha)\%$ equal-tailed credible interval is then
+\begin{equation}
+\label{eq:credibleIntervalFixedThreshold}
+    \left[
+        \widehat Q_R\left(\frac{\alpha}{2}\right),
+        \widehat Q_R\left(1-\frac{\alpha}{2}\right)
+    \right].
+\end{equation}
+Equation~\ref{eq:credibleIntervalFixedThreshold} is applied componentwise to
+$\boldsymbol\beta$ and $\boldsymbol\gamma$.
+
+Because subgroup membership is a nonlinear function of
+$\boldsymbol\gamma$, its uncertainty is summarized from the posterior draws
+rather than only by substituting $\widehat{\boldsymbol\gamma}$ into the index.
+For subject $i$, the posterior probability of membership in the
+index-positive subgroup is estimated by
+\begin{equation}
+\label{eq:posteriorSubgroupProbability}
+    \widehat P_i
+    =
+    \frac{1}{R}\sum_{r=1}^{R}
+    I\left\{1+\mathbf{x}_i^\top\boldsymbol\gamma^{(r)}\geq 0\right\}.
+\end{equation}
+A subject may be assigned to this subgroup when
+$\widehat P_i\geq 0.5$, while values near $0.5$ indicate substantial
+classification uncertainty.
+
+Writing $\boldsymbol\beta=(\beta_1,\beta_2,\beta_3)^\top$, the treatment
+hazard ratio is $\exp(\beta_1)$ for the index-negative subgroup and
+$\exp(\beta_1+\beta_3)$ for the index-positive subgroup. Point estimates and
+credible intervals for these hazard ratios are obtained by applying the
+corresponding transformation to every retained posterior draw and then taking
+the empirical mean or median and quantiles. This draw-by-draw transformation
+preserves posterior dependence between $\beta_1$ and $\beta_3$.

@@ -3,6 +3,8 @@
 args <- commandArgs(trailingOnly = TRUE)
 input_dir <- if (length(args) >= 1L) args[[1L]] else "results/fixed-parameter-simulation"
 output_file <- if (length(args) >= 2L) args[[2L]] else file.path(input_dir, "fixed-parameter-simulation-combined.csv")
+summary_file <- if (length(args) >= 3L) args[[3L]] else sub("[.]csv$", "-parameter-summary.csv", output_file)
+convergence_file <- if (length(args) >= 4L) args[[4L]] else sub("[.]csv$", "-convergence-summary.csv", output_file)
 
 files <- list.files(
   input_dir,
@@ -29,6 +31,9 @@ coverage_mean <- function(fits, coverage_column) {
 }
 
 censoring_mean <- function(fits) {
+  if (nrow(fits) == 0L) {
+    return(NA_real_)
+  }
   if (!"censoring_proportion" %in% names(fits)) {
     return(NA_real_)
   }
@@ -58,32 +63,70 @@ summary_for <- function(fits, parameters, bias_columns, coverage_columns) {
   )
 }
 
+scenario_value <- function(fits, column) {
+  if (nrow(fits) == 0L) {
+    return(NA)
+  }
+  if (!column %in% names(fits)) {
+    return(NA)
+  }
+
+  unique_values <- unique(fits[[column]])
+  if (length(unique_values) == 0L) {
+    return(NA)
+  }
+  unique_values[1]
+}
+
 convergence_summary <- data.frame(
+  scenario_label = scenario_value(results, "scenario_label"),
+  data_n = scenario_value(results, "data_n"),
+  true_beta_1 = scenario_value(results, "true_beta_1"),
+  true_beta_2 = scenario_value(results, "true_beta_2"),
+  true_beta_3 = scenario_value(results, "true_beta_3"),
+  true_gamma_1 = scenario_value(results, "true_gamma_1"),
+  true_gamma_2 = scenario_value(results, "true_gamma_2"),
   n_replicates = length(unique(results$replicate_index)),
   n_effective_data_sets = length(unique(results$global_data_set_index)),
   n_rows = nrow(results),
   n_skipped = sum(results$skipped),
   n_fit_attempted = nrow(fitted_rows),
   n_successful = nrow(successful_fits),
-  convergence_rate = nrow(successful_fits) / nrow(fitted_rows),
+  convergence_rate = if (nrow(fitted_rows) == 0L) NA_real_ else nrow(successful_fits) / nrow(fitted_rows),
   censoring_proportion = censoring_mean(results),
   successful_fit_censoring_proportion = censoring_mean(successful_fits)
 )
 
 message("wrote ", output_file)
+utils::write.csv(convergence_summary, convergence_file, row.names = FALSE)
 print(convergence_summary)
 
 if (nrow(successful_fits) > 0L) {
-  print(summary_for(
+  beta_summary <- summary_for(
     successful_fits,
     c("beta_1", "beta_2", "beta_3"),
     c("beta_1_bias", "beta_2_bias", "beta_3_bias"),
     c("beta_1_covered", "beta_2_covered", "beta_3_covered")
-  ))
-  print(summary_for(
+  )
+  gamma_summary <- summary_for(
     successful_fits,
     c("gamma_1", "gamma_2"),
     c("gamma_1_bias", "gamma_2_bias"),
     c("gamma_1_covered", "gamma_2_covered")
-  ))
+  )
+  parameter_summary <- rbind(beta_summary, gamma_summary)
+  parameter_summary <- data.frame(
+    scenario_label = scenario_value(results, "scenario_label"),
+    data_n = scenario_value(results, "data_n"),
+    true_beta_1 = scenario_value(results, "true_beta_1"),
+    true_beta_2 = scenario_value(results, "true_beta_2"),
+    true_beta_3 = scenario_value(results, "true_beta_3"),
+    parameter_summary,
+    check.names = FALSE
+  )
+
+  utils::write.csv(parameter_summary, summary_file, row.names = FALSE)
+  message("wrote ", summary_file)
+  message("wrote ", convergence_file)
+  print(parameter_summary)
 }

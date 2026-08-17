@@ -9,7 +9,11 @@ parse_args <- function(args) {
     max_data_set_attempts = "100",
     samples = "20000",
     burn_in = "10000",
-    thin = "10"
+    thin = "10",
+    true_beta_1 = as.character(log(1.5)),
+    true_beta_2 = as.character(log(1.2)),
+    true_beta_3 = as.character(log(2)),
+    scenario_label = NA_character_
   )
 
   index <- 1L
@@ -23,7 +27,11 @@ parse_args <- function(args) {
       "--max-data-set-attempts",
       "--samples",
       "--burn-in",
-      "--thin"
+      "--thin",
+      "--true-beta-1",
+      "--true-beta-2",
+      "--true-beta-3",
+      "--scenario-label"
     )) {
       key <- gsub("-", "_", sub("^--", "", arg))
       values[[key]] <- args[[index + 1L]]
@@ -40,8 +48,14 @@ parse_args <- function(args) {
   values$samples <- as.integer(values$samples)
   values$burn_in <- as.integer(values$burn_in)
   values$thin <- as.integer(values$thin)
+  values$true_beta_1 <- as.numeric(values$true_beta_1)
+  values$true_beta_2 <- as.numeric(values$true_beta_2)
+  values$true_beta_3 <- as.numeric(values$true_beta_3)
   if (is.na(values$output_dir)) {
     values$output_dir <- sprintf("results/fixed-parameter-simulation-n%d", values$data_n)
+  }
+  if (is.na(values$scenario_label)) {
+    values$scenario_label <- sprintf("n%d", values$data_n)
   }
   values
 }
@@ -61,7 +75,7 @@ source_package_r_files()
 
 min_group_size <- 60
 
-true_beta <- c(log(1.5), log(1.2), log(2))
+true_beta <- c(args$true_beta_1, args$true_beta_2, args$true_beta_3)
 true_gamma <- c(1.5, 1.8)
 gamma_start_values <- c(1, 1.3)
 
@@ -198,6 +212,7 @@ base_result_columns <- function(replicate_index,
                                 error) {
   data.frame(
     replicate_index = replicate_index,
+    scenario_label = args$scenario_label,
     data_n = args$data_n,
     data_set_index = data_set_index,
     global_data_set_index = (replicate_index - 1L) * args$n_data_sets + data_set_index,
