@@ -37,3 +37,21 @@ Rscript scripts/run-biomarker-mcmc.R \
 
 The same references can be supplied to the batch job as `REFERENCE_GAMMA`
 and `REFERENCE_BETA` environment variables.
+
+## All two-biomarker combinations
+
+Submit one job to fit HER-2 + CA19-9, HER-2 + Axl, and CA19-9 + Axl:
+
+```sh
+mkdir -p slurm
+SAMPLES=50000 \
+BURN_IN=50000 \
+THIN=10 \
+sbatch scripts/submit-biomarker-pairs.sbatch
+```
+
+The job runs the three models sequentially, using four parallel MCMC chains per
+model. Results are written to `results/biomarker-pairs-JOB_ID/`. Each pair has
+its own estimates, posterior samples, and convergence plots. The top-level
+`pairwise-parameter-summary.csv` combines the parameter summaries from all
+three models.
