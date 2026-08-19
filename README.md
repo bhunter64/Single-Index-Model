@@ -55,3 +55,21 @@ model. Results are written to `results/biomarker-pairs-JOB_ID/`. Each pair has
 its own estimates, posterior samples, and convergence plots. The top-level
 `pairwise-parameter-summary.csv` combines the parameter summaries from all
 three models.
+
+## Kaplan--Meier plots from fitted MCMC scores
+
+Generate KM plots and formal treatment-by-subgroup interaction tests from the
+three-marker and pairwise posterior summaries:
+
+```sh
+Rscript scripts/run-km-from-mcmc-results.R \
+  --three-summary /path/to/three-marker/parameter-summary.csv \
+  --pairwise-summary /path/to/pairwise-parameter-summary.csv \
+  --output-dir results/km-from-mcmc
+```
+
+For each fitted score, the script exports the classified data, group counts,
+four-group and subgroup-specific KM plots with risk tables, log-rank tests, and
+a Cox treatment-by-subgroup interaction test. These are exploratory
+post-selection analyses because the same observations were used to estimate
+gamma and define the subgroups.
