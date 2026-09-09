@@ -1,0 +1,6 @@
+"parameter","label","initial_value"
+"beta_treatment","Treatment",-0.467320209851101
+"beta_subgroup","Biomarker-defined subgroup",-0.272490139691354
+"beta_treatment_x_subgroup","Treatment x subgroup",0.307235590180865
+"gamma_bio3","CA19-9 (bio3)",0.5
+"gamma_bio37","Axl (bio37)",0.5

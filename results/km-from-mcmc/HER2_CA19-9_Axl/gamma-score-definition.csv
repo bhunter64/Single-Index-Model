@@ -1,0 +1,4 @@
+"biomarker","label","gamma_estimate","score_definition"
+"bio30","HER-2 (bio30)",-0.175935304656024,"1 + biomarkers %*% gamma; above if score >= 0"
+"bio3","CA19-9 (bio3)",0.388696031500421,"1 + biomarkers %*% gamma; above if score >= 0"
+"bio37","Axl (bio37)",-0.647592912540971,"1 + biomarkers %*% gamma; above if score >= 0"

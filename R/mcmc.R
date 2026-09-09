@@ -7,6 +7,10 @@
 #' @param gamma_sd Standard deviation vector or scalar for the normal gamma
 #'   prior.
 #' @param gamma_proposal_sd Random-walk proposal standard deviation for gamma.
+#' @param gamma_prior Gamma prior distribution, either `"normal"` or
+#'   `"uniform"`.
+#' @param gamma_min Lower bound vector or scalar for the uniform gamma prior.
+#' @param gamma_max Upper bound vector or scalar for the uniform gamma prior.
 #'
 #' @return A named list of MCMC controls.
 #' @export
@@ -16,7 +20,15 @@ default_mcmc_control <- function(samples = 5000,
                                  thin = 10,
                                  gamma_mean = 0,
                                  gamma_sd = 0.1,
-                                 gamma_proposal_sd = 0.05) {
+                                 gamma_proposal_sd = 0.05,
+                                 gamma_prior = c("normal", "uniform"),
+                                 gamma_min = -1,
+                                 gamma_max = 1) {
+
+  gamma_prior <- match.arg(gamma_prior)
+  if (gamma_prior == "uniform") {
+    validate_uniform_bounds(gamma_min, gamma_max, max(length(gamma_min), length(gamma_max)))
+  }
 
   return(list(
     samples = samples,
@@ -24,7 +36,10 @@ default_mcmc_control <- function(samples = 5000,
     thin = thin,
     gamma_mean = gamma_mean,
     gamma_sd = gamma_sd,
-    gamma_proposal_sd = gamma_proposal_sd
+    gamma_proposal_sd = gamma_proposal_sd,
+    gamma_prior = gamma_prior,
+    gamma_min = gamma_min,
+    gamma_max = gamma_max
   ))
 }
 
@@ -39,6 +54,8 @@ default_mcmc_control <- function(samples = 5000,
 #' @param lambda Nonnegative lasso penalty for gamma.
 #' @param treatment_col Column name or index for the treatment indicator.
 #' @param biomarker_cols Optional column names or indices for biomarkers.
+#' @param gamma_prior Optional gamma prior override, either `"normal"` or
+#'   `"uniform"`. When omitted, `control$gamma_prior` is used.
 #'
 #' @return A list containing updated `beta`, `gamma`, and `log_likelihood`.
 #' @export
@@ -49,9 +66,25 @@ mcmc_step <- function(x,
                       control,
                       lambda = 0,
                       treatment_col = 1,
-                      biomarker_cols = NULL) {
+                      biomarker_cols = NULL,
+                      gamma_prior = NULL) {
   x <- as.data.frame(x) # incase x is not passed as a data frame
   previous <- list(beta = beta, gamma = gamma)
+  control <- prepare_gamma_control(control, gamma_prior, length(gamma))
+
+  gamma_log_prior <- if (control$gamma_prior == "normal") {
+    function(value) {
+      log_gamma_prior(value, mean = control$gamma_mean, sd = control$gamma_sd)
+    }
+  } else {
+    function(value) {
+      log_gamma_uniform_prior(value, min = control$gamma_min, max = control$gamma_max)
+    }
+  }
+  current_gamma_log_prior <- gamma_log_prior(gamma)
+  if (control$gamma_prior == "uniform" && !is.finite(current_gamma_log_prior)) {
+    stop("gamma must lie within the uniform gamma prior bounds", call. = FALSE)
+  }
 
   # Loop through gamma selection
   current_log_likelihood <- cox_threshold_loglik(
@@ -66,7 +99,7 @@ mcmc_step <- function(x,
   for (gamma_index in seq_along(gamma)) {
     # Get the current likelihood for this step
     current_gamma_logpost <- current_log_likelihood +
-      log_gamma_prior(gamma, mean = control$gamma_mean, sd = control$gamma_sd) -
+      current_gamma_log_prior -
       lambda * sum(abs(gamma))
 
     # Copy gamma for the new candidate an replace the current index with one step
@@ -76,21 +109,25 @@ mcmc_step <- function(x,
       mean = gamma[gamma_index],
       sd = gamma_proposal_sd[gamma_index]
     )
-    candidate_log_likelihood <- cox_threshold_loglik(
-      x,
-      y,
-      beta,
-      candidate_gamma,
-      treatment_col = treatment_col,
-      biomarker_cols = biomarker_cols
-    )
-    candidate_gamma_logpost <- candidate_log_likelihood +
-      log_gamma_prior(candidate_gamma, mean = control$gamma_mean, sd = control$gamma_sd) -
-      lambda * sum(abs(candidate_gamma))
+    candidate_gamma_log_prior <- gamma_log_prior(candidate_gamma)
+    if (is.finite(candidate_gamma_log_prior)) {
+      candidate_log_likelihood <- cox_threshold_loglik(
+        x,
+        y,
+        beta,
+        candidate_gamma,
+        treatment_col = treatment_col,
+        biomarker_cols = biomarker_cols
+      )
+      candidate_gamma_logpost <- candidate_log_likelihood +
+        candidate_gamma_log_prior -
+        lambda * sum(abs(candidate_gamma))
 
-    if (accept_metropolis(candidate_gamma_logpost, current_gamma_logpost)) {
-      gamma <- candidate_gamma
-      current_log_likelihood <- candidate_log_likelihood
+      if (accept_metropolis(candidate_gamma_logpost, current_gamma_logpost)) {
+        gamma <- candidate_gamma
+        current_gamma_log_prior <- candidate_gamma_log_prior
+        current_log_likelihood <- candidate_log_likelihood
+      }
     }
   }
 
@@ -157,6 +194,8 @@ mcmc_step <- function(x,
 #' @param beta_start Optional initial three-vector for the treatment, subgroup,
 #'   and treatment-by-subgroup coefficients. When omitted, the coefficients are
 #'   initialized from a Cox model at `gamma_start`.
+#' @param gamma_prior Optional gamma prior override, either `"normal"` or
+#'   `"uniform"`. When omitted, `control$gamma_prior` is used.
 #'
 #' @return Posterior samples for beta, gamma, and log likelihood.
 #' @export
@@ -167,7 +206,8 @@ fit_threshold_mcmc <- function(x,
                                gamma_start = NULL,
                                treatment_col = 1,
                                biomarker_cols = NULL,
-                               beta_start = NULL) {
+                               beta_start = NULL,
+                               gamma_prior = NULL) {
   if (lambda < 0) {
     stop("lambda must be nonnegative", call. = FALSE)
   }
@@ -175,11 +215,22 @@ fit_threshold_mcmc <- function(x,
   x <- as.data.frame(x)
   biomarker_cols <- resolve_biomarker_columns(x, treatment_col, biomarker_cols)
   n_biomarkers <- length(biomarker_cols)
+  control <- prepare_gamma_control(control, gamma_prior, n_biomarkers)
 
   gamma <- if (is.null(gamma_start)) {
-    draw_gamma(n_biomarkers, mean = control$gamma_mean, sd = control$gamma_sd)
+    if (control$gamma_prior == "normal") {
+      draw_gamma(n_biomarkers, mean = control$gamma_mean, sd = control$gamma_sd)
+    } else {
+      draw_gamma_uniform(n_biomarkers, min = control$gamma_min, max = control$gamma_max)
+    }
   } else {
     validate_gamma(gamma_start, n_biomarkers)
+  }
+  if (
+    control$gamma_prior == "uniform" &&
+      !is.finite(log_gamma_uniform_prior(gamma, control$gamma_min, control$gamma_max))
+  ) {
+    stop("gamma_start must lie within the uniform gamma prior bounds", call. = FALSE)
   }
   beta <- if (is.null(beta_start)) {
     initialize_beta(x, y, gamma, treatment_col, biomarker_cols)
@@ -201,7 +252,8 @@ fit_threshold_mcmc <- function(x,
       control = control,
       lambda = lambda,
       treatment_col = treatment_col,
-      biomarker_cols = biomarker_cols
+      biomarker_cols = biomarker_cols,
+      gamma_prior = control$gamma_prior
     )
   }
 
@@ -221,7 +273,8 @@ fit_threshold_mcmc <- function(x,
       control = control,
       lambda = lambda,
       treatment_col = treatment_col,
-      biomarker_cols = biomarker_cols
+      biomarker_cols = biomarker_cols,
+      gamma_prior = control$gamma_prior
     )
 
     if (iteration %% control$thin == 0) {
@@ -256,6 +309,8 @@ fit_threshold_mcmc <- function(x,
 #' @param beta_start Optional initial three-vector for the treatment, subgroup,
 #'   and treatment-by-subgroup coefficients. When omitted, the coefficients are
 #'   initialized from a Cox model at `gamma_start`.
+#' @param gamma_prior Optional gamma prior override, either `"normal"` or
+#'   `"uniform"`. When omitted, `control$gamma_prior` is used.
 #'
 #' @return Posterior samples from `fit_threshold_mcmc()`.
 #' @export
@@ -267,7 +322,8 @@ fit_threshold_model <- function(data,
                                 status_col = "status",
                                 treatment_col = "treatment",
                                 biomarker_cols = NULL,
-                                beta_start = NULL) {
+                                beta_start = NULL,
+                                gamma_prior = NULL) {
   data <- as.data.frame(data)
 
   # check for basic columns
@@ -299,8 +355,40 @@ fit_threshold_model <- function(data,
     gamma_start = gamma_start,
     treatment_col = 1,
     biomarker_cols = seq_len(length(biomarker_cols)) + 1,
-    beta_start = beta_start
+    beta_start = beta_start,
+    gamma_prior = gamma_prior
   ))
+}
+
+#' Complete and validate the gamma-prior fields in an MCMC control list.
+#'
+#' Older user-created control lists did not contain `gamma_prior`, `gamma_min`,
+#' or `gamma_max`; those lists retain the original normal-prior behavior.
+#'
+#' @param control MCMC control list.
+#' @param gamma_prior Optional prior override.
+#' @param n_biomarkers Number of gamma components.
+#'
+#' @return The completed control list.
+#' @keywords internal
+prepare_gamma_control <- function(control, gamma_prior = NULL, n_biomarkers) {
+  if (is.null(gamma_prior)) {
+    gamma_prior <- if (is.null(control$gamma_prior)) "normal" else control$gamma_prior
+  }
+  gamma_prior <- match.arg(gamma_prior, c("normal", "uniform"))
+
+  control$gamma_prior <- gamma_prior
+  if (gamma_prior == "uniform") {
+    if (is.null(control$gamma_min)) {
+      control$gamma_min <- -1
+    }
+    if (is.null(control$gamma_max)) {
+      control$gamma_max <- 1
+    }
+    validate_uniform_bounds(control$gamma_min, control$gamma_max, n_biomarkers)
+  }
+
+  control
 }
 
 #' Summarize posterior samples.

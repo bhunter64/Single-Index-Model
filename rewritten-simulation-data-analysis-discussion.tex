@@ -1,0 +1,500 @@
+\section{Simulation studies}
+\label{simuStudy}
+
+We conducted simulation analyses to assess the performance of the proposed
+fixed-threshold estimation scheme with two biomarkers. In contrast to a model
+that estimates a separate cut-point and constrains the biomarker coefficients
+through angular coordinates, the present formulation fixes the threshold at
+zero and the intercept of the single-index score at one. Thus, for subject
+$i$, the biomarker-defined subgroup is
+\[
+    G_i(\boldsymbol\gamma)
+    = I\{1+\mathbf{z}_i^{T}\boldsymbol\gamma\geq 0\},
+\]
+and event times were generated from the exponential model with hazard
+\begin{equation}
+\label{eq:simModelFixedThreshold}
+    h_i(t)
+    = \exp\left\{
+        \beta_1 a_i
+        + \beta_2 G_i(\boldsymbol\gamma)
+        + \beta_3 a_iG_i(\boldsymbol\gamma)
+      \right\},
+\end{equation}
+where $a_i$ is the treatment indicator. The coefficient $\beta_1$ is the
+treatment effect in the index-negative subgroup, $\beta_2$ is the main effect
+of the index-positive subgroup, and $\beta_3$ is the treatment-by-subgroup
+interaction. Consequently, the treatment hazard ratios in the index-negative
+and index-positive subgroups are $\exp(\beta_1)$ and
+$\exp(\beta_1+\beta_3)$, respectively.
+
+We first examined a grid of regression parameters with sample sizes
+$n=600$, $1000$, and $1400$. Patients were independently assigned to the
+treatment or control arm with probability 0.5. The two biomarkers were
+generated independently from standard normal distributions, and their true
+index coefficients were fixed at
+$\boldsymbol\gamma=(1.5,1.8)^{T}$. We considered
+$\exp(\beta_1)\in\{1,2\}$,
+$\exp(\beta_2)\in\{2.5,2.8\}$, and
+$\exp(\beta_3)\in\{2.5,2.8\}$. Including $\beta_1=0$ allowed us to examine
+whether the biomarker-defined subgroup could be estimated in the absence of
+an overall treatment effect. The baseline hazard was one and independent
+administrative censoring times were generated from $U(0.4,3)$. Across the
+parameter grid, the empirical censoring proportions ranged from approximately
+6.9\% to 10.1\%.
+
+For each parameter combination, we obtained 500 successful simulated data
+sets, organized as 50 computational replicates of 10 data sets. A generated
+data set was eligible when each of the four treatment-by-subgroup cells
+contained at least 60 patients. We used the unpenalized model
+($\lambda=0$), initialized $\boldsymbol\gamma$ at $(1,1.3)^{T}$, and assigned
+independent $N(0.5,1)$ priors to its two components. The normal random-walk
+proposal standard deviation for each component of $\boldsymbol\gamma$ was
+0.5. Each MCMC run used 10,000 burn-in iterations and retained 20,000
+posterior draws after thinning by 10, for a total of 210,000 iterations.
+Posterior means were used as point estimates, and empirical coverage was
+calculated from equal-tailed 95\% credible intervals.
+
+Table~\ref{tab:betaGridSummary} summarizes the range of mean absolute bias,
+root mean squared error (RMSE), and empirical coverage across the eight
+regression-parameter combinations at each sample size. The signed biases were
+small throughout: the largest absolute mean bias among all coefficients and
+scenarios was 0.014. The mean absolute biases and RMSEs generally decreased as
+sample size increased. This pattern was especially clear for the index
+coefficients. For example, the mean absolute bias of $\hat\gamma_1$ decreased
+from 0.045--0.053 at $n=600$ to 0.017--0.021 at $n=1400$, while the
+corresponding range for $\hat\gamma_2$ decreased from 0.049--0.057 to
+0.020--0.023. Coverage probabilities remained close to the nominal 95\%
+level, ranging from 0.930 to 0.966 over the full grid. All 12,000 fits in this
+grid converged.
+
+\begin{table}[!htbp]
+\caption[Simulation performance over the regression-parameter grid]{Ranges of
+mean absolute bias, RMSE, and empirical coverage over the eight regression-
+parameter combinations at each sample size. Each parameter combination was
+represented by 500 successfully fitted simulated data sets.}
+\label{tab:betaGridSummary}
+\centering
+\scriptsize
+\begin{tabular}{clccc}
+\toprule
+$n$ & Parameter & Mean absolute bias & RMSE & Coverage probability \\
+\midrule
+600  & $\beta_1$  & 0.123--0.124 & 0.154--0.156 & 0.958--0.962 \\
+600  & $\beta_2$  & 0.114--0.115 & 0.143--0.145 & 0.940--0.950 \\
+600  & $\beta_3$  & 0.147--0.154 & 0.185--0.194 & 0.960--0.966 \\
+600  & $\gamma_1$ & 0.045--0.053 & 0.062--0.072 & 0.932--0.942 \\
+600  & $\gamma_2$ & 0.049--0.057 & 0.072--0.086 & 0.930--0.948 \\
+\addlinespace
+1000 & $\beta_1$  & 0.095--0.103 & 0.123--0.131 & 0.934--0.946 \\
+1000 & $\beta_2$  & 0.086--0.087 & 0.106--0.108 & 0.954--0.960 \\
+1000 & $\beta_3$  & 0.123--0.125 & 0.156--0.159 & 0.934--0.944 \\
+1000 & $\gamma_1$ & 0.025--0.030 & 0.033--0.040 & 0.946--0.954 \\
+1000 & $\gamma_2$ & 0.026--0.031 & 0.035--0.043 & 0.956--0.964 \\
+\addlinespace
+1400 & $\beta_1$  & 0.083--0.085 & 0.104--0.107 & 0.952--0.956 \\
+1400 & $\beta_2$  & 0.071--0.071 & 0.089--0.090 & 0.942--0.954 \\
+1400 & $\beta_3$  & 0.102--0.103 & 0.127--0.128 & 0.948--0.960 \\
+1400 & $\gamma_1$ & 0.017--0.021 & 0.024--0.029 & 0.940--0.946 \\
+1400 & $\gamma_2$ & 0.020--0.023 & 0.028--0.034 & 0.938--0.952 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We additionally examined a fixed parameter setting over a finer sequence of
+sample sizes. In this study,
+$\boldsymbol\beta=[\log(1.5),\log(1.2),\log(2)]^{T}$ and
+$\boldsymbol\gamma=(1.5,1.8)^{T}$, with 500 successfully fitted data sets for
+each of $n=600$, $800$, $1000$, $1200$, and $1400$. The results are displayed
+in Table~\ref{tab:fixedParameterSummary}. The signed biases approached zero
+with increasing sample size, and both the mean absolute biases and RMSEs
+decreased for every parameter. For example, the mean absolute biases of
+$\hat\gamma_1$ and $\hat\gamma_2$ decreased from 0.176 and 0.194 at $n=600$
+to 0.093 and 0.095 at $n=1400$. The corresponding RMSEs decreased from 0.237
+and 0.258 to 0.127 and 0.133. Coverage probabilities ranged from 0.934 to
+0.970 and showed no systematic deterioration as the credible intervals
+narrowed. The convergence rate was 95.4\% at $n=600$, where 524 fits were
+attempted to obtain 500 successful fits; it increased to 99.8\% at $n=800$
+and was 100\% for $n\geq1000$.
+
+\begin{table}[!htbp]
+\caption[Fixed-parameter simulation performance by sample size]{Simulation
+performance for
+$\boldsymbol\beta=[\log(1.5),\log(1.2),\log(2)]^{T}$ and
+$\boldsymbol\gamma=(1.5,1.8)^{T}$. Each sample size is represented by 500
+successfully fitted simulated data sets.}
+\label{tab:fixedParameterSummary}
+\centering
+\scriptsize
+\begin{tabular}{clrrrr}
+\toprule
+$n$ & Parameter & Bias & Mean absolute bias & RMSE & Coverage \\
+\midrule
+600 & $\beta_1$  & -0.015 & 0.125 & 0.158 & 0.962 \\
+600 & $\beta_2$  &  0.006 & 0.116 & 0.144 & 0.970 \\
+600 & $\beta_3$  &  0.022 & 0.153 & 0.192 & 0.956 \\
+600 & $\gamma_1$ & -0.043 & 0.176 & 0.237 & 0.946 \\
+600 & $\gamma_2$ & -0.067 & 0.194 & 0.258 & 0.960 \\
+\addlinespace
+800 & $\beta_1$  & -0.014 & 0.117 & 0.146 & 0.938 \\
+800 & $\beta_2$  & -0.006 & 0.104 & 0.131 & 0.934 \\
+800 & $\beta_3$  &  0.019 & 0.139 & 0.172 & 0.962 \\
+800 & $\gamma_1$ & -0.015 & 0.150 & 0.209 & 0.934 \\
+800 & $\gamma_2$ & -0.031 & 0.163 & 0.221 & 0.942 \\
+\addlinespace
+1000 & $\beta_1$  & -0.003 & 0.099 & 0.126 & 0.940 \\
+1000 & $\beta_2$  &  0.002 & 0.089 & 0.111 & 0.956 \\
+1000 & $\beta_3$  &  0.010 & 0.125 & 0.156 & 0.938 \\
+1000 & $\gamma_1$ & -0.014 & 0.119 & 0.160 & 0.952 \\
+1000 & $\gamma_2$ & -0.013 & 0.122 & 0.166 & 0.960 \\
+\addlinespace
+1200 & $\beta_1$  &  0.005 & 0.089 & 0.111 & 0.964 \\
+1200 & $\beta_2$  &  0.001 & 0.078 & 0.099 & 0.958 \\
+1200 & $\beta_3$  & -0.001 & 0.106 & 0.133 & 0.960 \\
+1200 & $\gamma_1$ & -0.004 & 0.102 & 0.141 & 0.954 \\
+1200 & $\gamma_2$ & -0.009 & 0.110 & 0.155 & 0.958 \\
+\addlinespace
+1400 & $\beta_1$  & -0.000 & 0.083 & 0.104 & 0.944 \\
+1400 & $\beta_2$  & -0.000 & 0.071 & 0.088 & 0.952 \\
+1400 & $\beta_3$  &  0.002 & 0.099 & 0.124 & 0.960 \\
+1400 & $\gamma_1$ &  0.003 & 0.093 & 0.127 & 0.942 \\
+1400 & $\gamma_2$ & -0.006 & 0.095 & 0.133 & 0.948 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% FIGURE NEEDED HERE: A five-panel or faceted line plot of mean absolute bias
+% and RMSE against n for beta_1, beta_2, beta_3, gamma_1, and gamma_2 in the
+% fixed-parameter study. The plot should be made from the values in
+% Table~\ref{tab:fixedParameterSummary} and should emphasize the decrease in
+% estimation error with increasing sample size.
+\begin{figure}[!htbp]
+\centering
+\fbox{\parbox{0.92\textwidth}{\centering\textbf{Figure needed:} mean absolute
+bias and RMSE versus sample size for the five parameters in the
+fixed-parameter simulation.}}
+\caption[Estimation error by sample size]{Mean absolute bias and RMSE by
+sample size in the fixed-parameter simulation. Separate curves are needed for
+$\beta_1$, $\beta_2$, $\beta_3$, $\gamma_1$, and $\gamma_2$.}
+\label{fig:simBiasByN}
+\end{figure}
+
+Taken together, the simulations indicate that fixing the index intercept and
+threshold yields stable estimation of both the regression and biomarker-index
+coefficients in the settings examined. The strongest evidence is the
+consistent reduction in absolute bias and RMSE as $n$ increases, together
+with coverage probabilities that remain near 0.95. The results with
+$\beta_1=0$ also show that the model can recover the subgroup and interaction
+parameters when there is no overall treatment effect in the index-negative
+subgroup.
+
+\section{Data Analysis}
+\label{analysis}
+
+For application, we used data from a phase III randomized trial of patients
+with locally advanced or metastatic pancreatic cancer
+\cite{doi:10.1200/JCO.2006.07.9525}. Patients were randomly assigned to
+receive gemcitabine plus erlotinib or gemcitabine alone. Protein expression
+levels measured from pretreatment plasma samples have previously been used to
+study prognostic and treatment-predictive biomarkers in this trial
+\cite{ShultzDavidB2016ANBP,HeYe2018AstC}. In particular, HER2 has been
+reported as a prognostic biomarker, whereas the combination of CA19-9 and Axl
+has been investigated as a potential definition of erlotinib sensitivity
+subsets.
+
+The analysis data contained 569 patients, including 285 in the erlotinib arm
+and 284 in the control arm; 485 events were observed. For each protein, values
+that could not be converted to numeric form were treated as missing and
+replaced by the observed column mean. The biomarker values were then
+log-transformed and standardized. We focused on HER2, CA19-9, and Axl. We
+first fitted the model with all three biomarkers and then fitted each of the
+three two-biomarker combinations for comparison.
+
+For every model we used four MCMC chains. Each chain discarded 50,000 burn-in
+iterations and retained 50,000 posterior samples after thinning by 10, for
+550,000 iterations per chain. Independent $N(0,1)$ priors were assigned to
+the components of $\boldsymbol\gamma$, and no lasso penalty was applied
+($\lambda=0$). For the three-biomarker model, the starting value was
+$(-0.6,0.5,0.5)^{T}$ for HER2, CA19-9, and Axl, respectively. Posterior means
+and equal-tailed 95\% credible intervals are reported below. The split
+$\widehat R$ values for the three-biomarker model ranged from 1.001 to 1.006,
+and the effective sample sizes ranged from 589 to 1801. Across the pairwise
+models, the largest split $\widehat R$ was 1.014. These diagnostics and the
+trace plots did not indicate gross between-chain disagreement, although the
+moderate effective sample sizes for several $\gamma$ coefficients reflect
+substantial autocorrelation.
+
+% FIGURE NEEDED HERE: Four-chain trace plots and autocorrelation plots for all
+% beta and gamma parameters in the HER2/CA19-9/Axl analysis. Existing source
+% files: results/biomarker-mcmc-trial3/convergence-traces.pdf and
+% results/biomarker-mcmc-trial3/convergence-autocorrelation.pdf.
+\begin{figure}[!htbp]
+\centering
+\fbox{\parbox{0.92\textwidth}{\centering\textbf{Figure needed:} four-chain
+trace and autocorrelation plots for the HER2, CA19-9, and Axl model. Existing
+plots are stored in \texttt{results/biomarker-mcmc-trial3/}.}}
+\caption[MCMC diagnostics for the three-biomarker model]{Trace and
+autocorrelation plots for the four MCMC chains in the HER2, CA19-9, and Axl
+analysis.}
+\label{fig:analysisConvergence}
+\end{figure}
+
+Table~\ref{tab:analysisEst} presents the posterior estimates for the
+three-biomarker analysis. The estimated score was
+\begin{equation}
+\label{eq:threeBiomarkerScore}
+    S_i
+    = 1 - 0.176\,\mathrm{HER2}_i
+        + 0.389\,\mathrm{CA19\mbox{-}9}_i
+        - 0.648\,\mathrm{Axl}_i,
+\end{equation}
+with patients classified as index-positive when $S_i\geq0$. All three
+biomarker credible intervals contained zero. The estimated
+treatment-by-subgroup interaction was $\hat\beta_3=0.548$, with a 95\%
+credible interval from $-1.093$ to $1.864$, and therefore did not provide
+strong posterior evidence of treatment-effect heterogeneity.
+
+\begin{table}[!htbp]
+\caption[Posterior estimates for the three-biomarker analysis]{Posterior means,
+posterior standard deviations, equal-tailed 95\% credible intervals, split
+$\widehat R$, and effective sample sizes for the model containing HER2,
+CA19-9, and Axl.}
+\label{tab:analysisEst}
+\centering
+\scriptsize
+\begin{tabular}{lrrrrrr}
+\toprule
+Parameter & Estimate & Posterior SD & Lower 95\% & Upper 95\% & Split $\widehat R$ & ESS \\
+\midrule
+$\beta_1$ (treatment)             & -0.670 & 0.726 & -1.998 & 0.778 & 1.005 & 1195 \\
+$\beta_2$ (index-positive group)  &  0.026 & 0.543 & -0.529 & 0.702 & 1.003 & 1801 \\
+$\beta_3$ (interaction)           &  0.548 & 0.768 & -1.093 & 1.864 & 1.006 & 1028 \\
+$\gamma_{\mathrm{HER2}}$          & -0.176 & 0.565 & -1.058 & 1.191 & 1.006 & 686 \\
+$\gamma_{\mathrm{CA19\mbox{-}9}}$&  0.389 & 0.565 & -0.897 & 1.306 & 1.001 & 942 \\
+$\gamma_{\mathrm{Axl}}$           & -0.648 & 0.684 & -1.936 & 0.936 & 1.005 & 589 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Using the posterior-mean score in Equation~\ref{eq:threeBiomarkerScore}, 41
+patients were classified as index-negative and 528 as index-positive. In the
+index-negative subgroup, median survival was 8.31 months among treated
+patients and 6.46 months among controls; the treatment log-rank p-value was
+0.114. In the index-positive subgroup, the corresponding median survival
+times were 6.11 and 5.91 months, with p=0.089. The four-group log-rank test
+gave p=0.047. When the treatment hazard ratio was calculated from every
+posterior draw, its posterior mean and 95\% credible interval were 0.68
+(0.14, 2.18) in the index-negative subgroup and 0.89 (0.68, 1.11) in the
+index-positive subgroup. A conventional Cox model applied after fixing the
+estimated subgroup gave an interaction hazard ratio of 1.47 (95\% confidence
+interval 0.72--3.03; Wald p=0.293). Thus, although the descriptive survival
+curves differed across the four groups, the three-biomarker analysis did not
+show a precise treatment-by-subgroup interaction.
+
+% FIGURE NEEDED HERE: Kaplan--Meier curves for the four treatment-by-subgroup
+% groups under the HER2/CA19-9/Axl posterior-mean score. Existing source:
+% results/km-from-mcmc/HER2_CA19-9_Axl/km-four-groups.pdf. A two-panel version
+% may additionally use km-treatment-below-threshold.pdf and
+% km-treatment-above-threshold.pdf from the same directory.
+\begin{figure}[!htbp]
+\centering
+\fbox{\parbox{0.92\textwidth}{\centering\textbf{Figure needed:}
+Kaplan--Meier curves for the four treatment-by-subgroup groups from the HER2,
+CA19-9, and Axl model, with numbers at risk.}}
+\caption[Kaplan--Meier curves for the three-biomarker model]{Kaplan--Meier
+curves by treatment and posterior-mean biomarker subgroup for the HER2,
+CA19-9, and Axl model.}
+\label{fig:threeBiomarkerKM}
+\end{figure}
+
+For comparison, we also fitted the model using each pair of biomarkers.
+Table~\ref{tab:pairwiseAnalysis} summarizes the regression coefficients. The
+credible intervals for all three interactions contained zero. The pairwise
+scores and their descriptive survival results are summarized in
+Table~\ref{tab:pairwiseSurvival}. Of the three fits, the CA19-9/Axl model
+produced the most distinct and usable partition. Its posterior-mean score was
+\begin{equation}
+\label{eq:caAxlScore}
+    S_i=1+0.641\,\mathrm{CA19\mbox{-}9}_i-0.921\,\mathrm{Axl}_i.
+\end{equation}
+The 95\% credible intervals for both index coefficients contained zero:
+$(-0.721,1.340)$ for CA19-9 and $(-2.080,0.347)$ for Axl. Seventy-four
+patients were below the fixed threshold. Within this subgroup,
+median survival was 8.31 months in the treatment arm and 5.65 months in the
+control arm, and the treatment log-rank p-value was 0.010. Among the 495
+index-positive patients, median survival was 6.08 and 5.95 months,
+respectively, with p=0.284. The draw-by-draw posterior treatment hazard ratio
+was 0.77 (95\% credible interval 0.015--0.996) below the threshold and 0.91
+(0.73--1.11) above it. The post-classification Cox interaction hazard ratio
+was 1.77 (95\% confidence interval 1.01--3.08; Wald p=0.045).
+
+\begin{table}[!htbp]
+\caption[Posterior regression estimates for the pairwise analyses]{Posterior
+means and equal-tailed 95\% credible intervals for the regression coefficients
+in the three pairwise biomarker models.}
+\label{tab:pairwiseAnalysis}
+\centering
+\scriptsize
+\begin{tabular}{lccc}
+\toprule
+Biomarkers & $\beta_1$ & $\beta_2$ & $\beta_3$ \\
+\midrule
+HER2, CA19-9
+& 0.076 $(-1.344,1.487)$
+& 0.238 $(-0.737,1.041)$
+& -0.305 $(-1.743,1.224)$ \\
+HER2, Axl
+& -0.328 $(-2.869,1.107)$
+& 0.109 $(-2.110,0.963)$
+& 0.120 $(-1.418,2.691)$ \\
+CA19-9, Axl
+& -0.859 $(-4.211,-0.004)$
+& -0.115 $(-4.322,0.573)$
+& 0.758 $(-0.172,4.022)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[!htbp]
+\caption[Subgroup sizes and exploratory survival comparisons]{Subgroup sizes,
+median survival times, and exploratory treatment comparisons based on the
+posterior-mean pairwise scores. The Cox interaction tests condition on
+subgroups estimated from the same data.}
+\label{tab:pairwiseSurvival}
+\centering
+\scriptsize
+\begin{tabular}{lrrrrrr}
+\toprule
+& \multicolumn{2}{c}{Subgroup size}
+& \multicolumn{2}{c}{Treated/control median}
+& \multicolumn{1}{c}{Treatment log-rank p}
+& \multicolumn{1}{c}{Interaction} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Biomarkers & Below & Above & Below & Above & Below / Above & HR (Wald p) \\
+\midrule
+HER2, CA19-9 & 18 & 551 & 4.24/7.36 & 6.37/5.91 & 0.122 / 0.012 & 0.30 (0.017) \\
+HER2, Axl    &  0 & 569 & ---         & 6.37/5.91 & --- / 0.035   & not estimable \\
+CA19-9, Axl  & 74 & 495 & 8.31/5.65 & 6.08/5.95 & 0.010 / 0.284 & 1.77 (0.045) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The remaining pairwise fits require more caution. The HER2/CA19-9 score
+was $1+0.480\,\mathrm{HER2}+0.011\,\mathrm{CA19\mbox{-}9}$; it classified
+only 18 patients as index-negative, and the posterior mean of the CA19-9
+coefficient was close to zero. The HER2/Axl score was
+$1+0.076\,\mathrm{HER2}-0.149\,\mathrm{Axl}$. Its posterior-mean value
+classified all 569 patients as index-positive, so an interaction was not
+estimable from the resulting partition. These outcomes illustrate that
+convergence of the MCMC chains does not by itself guarantee a clinically
+useful or adequately sized subgroup.
+
+% FIGURE NEEDED HERE: A two-panel Kaplan--Meier display for the CA19-9/Axl
+% model, showing treatment within the below-threshold and above-threshold
+% subgroups, with numbers at risk. Existing sources:
+% results/km-from-mcmc/CA19-9_Axl/km-treatment-below-threshold.pdf and
+% results/km-from-mcmc/CA19-9_Axl/km-treatment-above-threshold.pdf.
+\begin{figure}[!htbp]
+\centering
+\fbox{\parbox{0.92\textwidth}{\centering\textbf{Figure needed:}
+treatment-specific Kaplan--Meier curves within the below- and above-threshold
+subgroups from the CA19-9/Axl model, with numbers at risk.}}
+\caption[Kaplan--Meier curves for the CA19-9/Axl model]{Kaplan--Meier curves
+by treatment within the index-negative and index-positive subgroups from the
+CA19-9/Axl posterior-mean score.}
+\label{fig:caAxlKM}
+\end{figure}
+
+All log-rank and conventional Cox p-values in this section are exploratory.
+The biomarker coefficients and subgroup assignments were estimated from the
+same observations used for the survival comparisons, so these tests do not
+account for score-selection uncertainty and may be anti-conservative. The
+posterior intervals, subgroup sizes, and stability of the estimated score
+should therefore be considered together rather than interpreting the
+post-classification p-values in isolation.
+
+\section{Discussion}
+
+We developed a Bayesian fixed-threshold single-index model for identifying
+treatment-sensitive subgroups in survival data with multiple biomarkers. The
+model uses the score $1+\mathbf{z}_i^{T}\boldsymbol\gamma$ and fixes its
+threshold at zero. This parameterization removes the need to estimate a
+separate cut-point or represent the biomarker coefficients through angular
+coordinates. It also anchors the scale of the index by fixing its intercept,
+thereby avoiding the cut-point--coefficient rescaling ambiguity that arises
+when both quantities are freely estimated. A Metropolis-within-Gibbs
+algorithm is used to sample the regression coefficients and the biomarker
+index coefficients from the posterior distribution.
+
+The simulation results suggest that the proposed formulation can recover the
+regression and index coefficients under the conditions examined. Across 24
+sample-size and regression-parameter scenarios, signed biases were small and
+empirical coverage was generally close to 95\%. The additional fixed-
+parameter study showed a consistent decrease in mean absolute bias and RMSE
+from $n=600$ to $n=1400$. This improvement was especially pronounced for
+$\boldsymbol\gamma$, which is important because uncertainty in the index
+coefficients directly affects subgroup membership. The simulations with
+$\beta_1=0$ further indicate that the method can estimate a biomarker-defined
+interaction even when there is no treatment effect in the index-negative
+subgroup.
+
+Application to the pancreatic cancer trial was less conclusive and
+illustrates the importance of separating numerical convergence from
+scientific evidence. The three-biomarker model had satisfactory split
+$\widehat R$ values, but all biomarker and interaction credible intervals
+contained zero and the posterior treatment-effect intervals were wide. The
+CA19-9/Axl analysis produced a subgroup with a more favorable descriptive
+treatment comparison, consistent with the direction of earlier work
+\cite{HeYe2018AstC}; however, its interaction credible interval also included
+zero, and the index-negative subgroup contained only 74 patients. The other
+pairwise scores generated either a very small subgroup or no division at all.
+Accordingly, these data support the fitted scores as hypotheses for further
+study rather than as validated treatment rules.
+
+We note several limitations. First, the simulation studies used two
+independent normally distributed biomarkers, exponential event times, modest
+censoring, and treatment allocation of 0.5. They do not yet assess correlated
+biomarkers, more than two biomarkers, alternative baseline hazards,
+covariate-dependent censoring, or model misspecification. In addition,
+simulation data sets were required to have at least 60 subjects in each
+treatment-by-subgroup cell, and failed fits were retried until a successful
+fit was obtained. The reported operating characteristics therefore apply to
+eligible, successfully fitted data sets and should not be interpreted as
+unconditional performance in sparse-subgroup settings.
+
+Second, the subgroup indicator is a discontinuous function of
+$\boldsymbol\gamma$. Small changes in an index coefficient can reclassify
+subjects near the threshold, producing autocorrelation or multimodality even
+when split $\widehat R$ is near one. The moderate effective sample sizes in
+the application and the very small subgroup from some posterior-mean scores
+are manifestations of this difficulty. Multiple dispersed starting values,
+longer runs, sensitivity analyses for the prior variance, and posterior
+summaries of each patient's subgroup-membership probability should accompany
+future applications.
+
+Third, the present analyses used $\lambda=0$ and therefore did not perform
+formal biomarker selection. Although an $\ell_1$ penalty is available, it
+shrinks coefficients without placing exact posterior mass at zero. Bayesian
+spike-and-slab priors, continuous shrinkage priors, or a model-averaging
+strategy may provide a more principled approach when many candidate
+biomarkers are considered. Such extensions should be evaluated for both
+selection accuracy and stability of the induced subgroup.
+
+Finally, the Kaplan--Meier, log-rank, and conventional Cox interaction
+analyses used subgroup assignments learned from the same trial. Their
+p-values do not propagate uncertainty in $\boldsymbol\gamma$ and may be
+optimistic. A confirmatory analysis should prespecify the biomarker score and
+fixed threshold and then evaluate them in independent data. Internal
+validation by sample splitting or nested resampling would provide a useful
+intermediate assessment, but external validation remains necessary before a
+score is used to guide treatment. Future work should also examine posterior
+predictive measures of subgroup benefit that integrate over uncertain
+membership rather than relying only on a hard classification from the
+posterior-mean score.
+
+Despite these limitations, the fixed-threshold parameterization provides a
+simple and computationally practical framework for combining multiple
+biomarkers. The simulation results establish encouraging estimation
+properties, while the application demonstrates both the potential of the
+CA19-9/Axl score and the uncertainty that must be addressed before the method
+can support confirmatory biomarker-guided treatment decisions.

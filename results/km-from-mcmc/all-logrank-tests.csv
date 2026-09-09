@@ -1,0 +1,13 @@
+"model","comparison","n","groups","chisq","df","p_value"
+"HER2_CA19-9_Axl","Four treatment-by-subgroup groups",569,4,7.93877525476477,3,0.0472941290707421
+"HER2_CA19-9_Axl","Treatment within below-threshold subgroup",41,2,2.49223127910421,1,0.114409420964211
+"HER2_CA19-9_Axl","Treatment within above-threshold subgroup",528,2,2.88598483001091,1,0.0893533571464419
+"HER2_CA19-9","Four treatment-by-subgroup groups",569,4,10.6856012306089,3,0.0135532949145587
+"HER2_CA19-9","Treatment within below-threshold subgroup",18,2,2.39475335926334,1,0.121742949518293
+"HER2_CA19-9","Treatment within above-threshold subgroup",551,2,6.26372386758211,1,0.0123234901268485
+"HER2_Axl","Four treatment-by-subgroup groups",569,2,4.42132403621485,1,0.0354924857353853
+"HER2_Axl","Treatment within below-threshold subgroup",0,0,NA,NA,NA
+"HER2_Axl","Treatment within above-threshold subgroup",569,2,4.42132403621485,1,0.0354924857353853
+"CA19-9_Axl","Four treatment-by-subgroup groups",569,4,12.0262385939108,3,0.00729381650732099
+"CA19-9_Axl","Treatment within below-threshold subgroup",74,2,6.62313226668948,1,0.0100662646036985
+"CA19-9_Axl","Treatment within above-threshold subgroup",495,2,1.14828178214793,1,0.283909121805598

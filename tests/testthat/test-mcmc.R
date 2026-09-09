@@ -5,7 +5,10 @@ test_that("default_mcmc_control records sampler settings", {
     thin = 3,
     gamma_mean = c(0, 1),
     gamma_sd = c(0.2, 0.3),
-    gamma_proposal_sd = c(0.01, 0.02)
+    gamma_proposal_sd = c(0.01, 0.02),
+    gamma_prior = "uniform",
+    gamma_min = c(-2, -1),
+    gamma_max = c(2, 3)
   )
 
   expect_equal(control$samples, 12)
@@ -14,6 +17,14 @@ test_that("default_mcmc_control records sampler settings", {
   expect_equal(control$gamma_mean, c(0, 1))
   expect_equal(control$gamma_sd, c(0.2, 0.3))
   expect_equal(control$gamma_proposal_sd, c(0.01, 0.02))
+  expect_equal(control$gamma_prior, "uniform")
+  expect_equal(control$gamma_min, c(-2, -1))
+  expect_equal(control$gamma_max, c(2, 3))
+  expect_error(default_mcmc_control(gamma_prior = "invalid"), "arg")
+  expect_error(
+    default_mcmc_control(gamma_prior = "uniform", gamma_min = 1, gamma_max = 1),
+    "less than"
+  )
 })
 
 test_that("mcmc_step returns a valid updated sampler state", {
@@ -129,6 +140,48 @@ test_that("fit_threshold_mcmc accepts explicit beta starting values", {
 
   expect_equal(dim(posterior$beta_samples), c(3L, 2L))
   expect_true(all(is.finite(posterior$beta_samples)))
+})
+
+test_that("model fitting supports a uniform gamma prior", {
+  set.seed(3005)
+  data <- simulate_threshold_data(
+    n = 100,
+    beta = c(log(1.4), log(1.2), log(1.3)),
+    gamma = c(0.4, 0.6),
+    study_end_range = c(0.5, 3)
+  )
+  control <- default_mcmc_control(
+    samples = 2,
+    burn_in = 0,
+    thin = 1,
+    gamma_proposal_sd = 0,
+    gamma_min = c(-0.5, 0),
+    gamma_max = c(0.5, 1)
+  )
+
+  posterior <- fit_threshold_model(
+    data,
+    control = control,
+    gamma_prior = "uniform",
+    gamma_start = c(0.4, 0.6),
+    beta_start = c(0, 0, 0)
+  )
+
+  expect_equal(posterior$control$gamma_prior, "uniform")
+  expect_true(all(posterior$gamma_samples[1, ] >= -0.5))
+  expect_true(all(posterior$gamma_samples[1, ] <= 0.5))
+  expect_true(all(posterior$gamma_samples[2, ] >= 0))
+  expect_true(all(posterior$gamma_samples[2, ] <= 1))
+  expect_error(
+    fit_threshold_model(
+      data,
+      control = control,
+      gamma_prior = "uniform",
+      gamma_start = c(0.6, 0.6),
+      beta_start = c(0, 0, 0)
+    ),
+    "gamma_start must lie"
+  )
 })
 
 test_that("summarize_mcmc supports mean and median summaries", {

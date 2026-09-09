@@ -1,0 +1,328 @@
+\section{Appendix}
+
+\subsection{Supporting information}
+\label{appendixA}
+
+This appendix provides detailed results for the fixed-threshold single-index
+model described in the main text. Because the revised model fixes the index
+intercept at one and the threshold at zero, no separate cut-point, angular
+parameter, or angular-range sensitivity analysis is reported. Likewise, the
+earlier five-biomarker angular simulations and univariate biomarker-screening
+analysis were not repeated under the present formulation.
+
+\subsubsection{Detailed simulation results}
+
+Table~\ref{tab:appBetaGrid} presents the signed bias and empirical coverage
+probability for all 24 combinations in the regression-parameter grid. The
+true biomarker coefficients were
+$\boldsymbol\gamma=(1.5,1.8)^{T}$ in every scenario. Each row represents 500
+successfully fitted simulated data sets. Additional summaries of mean
+absolute bias and RMSE are reported in the main text.
+
+\begin{table}[p]
+\caption[Detailed results for the regression-parameter grid]{Detailed
+simulation results for the 24 sample-size and regression-parameter
+combinations. Columns 2--4 give the true hazard-ratio parameters, columns
+5--9 give empirical signed bias, and columns 10--14 give empirical coverage
+probability based on equal-tailed 95\% credible intervals.}
+\label{tab:appBetaGrid}
+\centering
+\scriptsize
+\resizebox{\textwidth}{!}{
+\begin{tabular}{ccccrrrrrrrrrr}
+\toprule
+& \multicolumn{3}{c}{True hazard ratios}
+& \multicolumn{5}{c}{Empirical bias}
+& \multicolumn{5}{c}{Coverage probability} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-9}\cmidrule(lr){10-14}
+$n$ & $\exp(\beta_1)$ & $\exp(\beta_2)$ & $\exp(\beta_3)$
+& $\hat\beta_1$ & $\hat\beta_2$ & $\hat\beta_3$ & $\hat\gamma_1$ & $\hat\gamma_2$
+& $\hat\beta_1$ & $\hat\beta_2$ & $\hat\beta_3$ & $\hat\gamma_1$ & $\hat\gamma_2$ \\
+\midrule
+600  & 1.0 & 2.5 & 2.5 &  0.006 & 0.013 & -0.002 & 0.001 & 0.003 & 0.960 & 0.946 & 0.964 & 0.938 & 0.948 \\
+600  & 1.0 & 2.5 & 2.8 &  0.005 & 0.012 &  0.000 & 0.002 & 0.003 & 0.960 & 0.950 & 0.960 & 0.932 & 0.946 \\
+600  & 1.0 & 2.8 & 2.5 &  0.002 & 0.011 &  0.001 & 0.001 & 0.002 & 0.958 & 0.940 & 0.962 & 0.936 & 0.944 \\
+600  & 1.0 & 2.8 & 2.8 &  0.005 & 0.013 &  0.000 & 0.001 & 0.001 & 0.960 & 0.946 & 0.960 & 0.938 & 0.934 \\
+600  & 2.0 & 2.5 & 2.5 &  0.011 & 0.013 & -0.004 & 0.002 & 0.004 & 0.962 & 0.942 & 0.964 & 0.938 & 0.942 \\
+600  & 2.0 & 2.5 & 2.8 &  0.011 & 0.013 & -0.003 & 0.002 & 0.003 & 0.962 & 0.946 & 0.966 & 0.932 & 0.940 \\
+600  & 2.0 & 2.8 & 2.5 &  0.011 & 0.014 & -0.004 & 0.002 & 0.003 & 0.958 & 0.946 & 0.962 & 0.942 & 0.936 \\
+600  & 2.0 & 2.8 & 2.8 &  0.011 & 0.014 & -0.003 & 0.001 & 0.002 & 0.958 & 0.948 & 0.962 & 0.938 & 0.930 \\
+\addlinespace
+1000 & 1.0 & 2.5 & 2.5 &  0.000 & 0.005 &  0.008 &  0.000 & 0.001 & 0.946 & 0.960 & 0.934 & 0.950 & 0.956 \\
+1000 & 1.0 & 2.5 & 2.8 &  0.000 & 0.005 &  0.009 &  0.000 & 0.001 & 0.946 & 0.960 & 0.936 & 0.950 & 0.960 \\
+1000 & 1.0 & 2.8 & 2.5 &  0.000 & 0.005 &  0.008 &  0.000 & 0.002 & 0.946 & 0.954 & 0.934 & 0.946 & 0.962 \\
+1000 & 1.0 & 2.8 & 2.8 &  0.000 & 0.005 &  0.009 &  0.000 & 0.002 & 0.946 & 0.956 & 0.934 & 0.954 & 0.962 \\
+1000 & 2.0 & 2.5 & 2.5 &  0.002 & 0.004 &  0.008 & -0.001 & 0.000 & 0.936 & 0.958 & 0.944 & 0.950 & 0.956 \\
+1000 & 2.0 & 2.5 & 2.8 &  0.002 & 0.004 &  0.009 &  0.000 & 0.001 & 0.938 & 0.958 & 0.942 & 0.954 & 0.958 \\
+1000 & 2.0 & 2.8 & 2.5 &  0.002 & 0.004 &  0.008 &  0.000 & 0.001 & 0.938 & 0.958 & 0.944 & 0.952 & 0.960 \\
+1000 & 2.0 & 2.8 & 2.8 &  0.002 & 0.004 &  0.009 &  0.000 & 0.002 & 0.934 & 0.954 & 0.942 & 0.954 & 0.964 \\
+\addlinespace
+1400 & 1.0 & 2.5 & 2.5 & -0.001 & 0.001 & 0.003 & 0.001 & -0.001 & 0.954 & 0.948 & 0.948 & 0.942 & 0.948 \\
+1400 & 1.0 & 2.5 & 2.8 & -0.001 & 0.001 & 0.003 & 0.001 & -0.001 & 0.954 & 0.950 & 0.950 & 0.944 & 0.952 \\
+1400 & 1.0 & 2.8 & 2.5 & -0.001 & 0.002 & 0.002 & 0.001 &  0.000 & 0.954 & 0.954 & 0.952 & 0.946 & 0.942 \\
+1400 & 1.0 & 2.8 & 2.8 & -0.001 & 0.002 & 0.003 & 0.001 &  0.000 & 0.954 & 0.954 & 0.948 & 0.946 & 0.942 \\
+1400 & 2.0 & 2.5 & 2.5 &  0.002 & 0.001 & 0.002 & 0.001 & -0.001 & 0.952 & 0.944 & 0.952 & 0.940 & 0.946 \\
+1400 & 2.0 & 2.5 & 2.8 &  0.002 & 0.001 & 0.002 & 0.001 & -0.001 & 0.954 & 0.942 & 0.958 & 0.946 & 0.950 \\
+1400 & 2.0 & 2.8 & 2.5 &  0.002 & 0.002 & 0.002 & 0.001 & -0.001 & 0.956 & 0.952 & 0.954 & 0.940 & 0.938 \\
+1400 & 2.0 & 2.8 & 2.8 &  0.002 & 0.001 & 0.002 & 0.001 &  0.000 & 0.956 & 0.952 & 0.960 & 0.946 & 0.946 \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\clearpage
+
+Table~\ref{tab:appFixedParameter} gives the complete fixed-parameter results,
+including the Monte Carlo standard error (MCSE) of the empirical bias. The
+true parameters were
+$\boldsymbol\beta=[\log(1.5),\log(1.2),\log(2)]^{T}$ and
+$\boldsymbol\gamma=(1.5,1.8)^{T}$. Each sample size was represented by 500
+successfully fitted data sets.
+
+\begin{table}[p]
+\caption[Detailed fixed-parameter simulation results]{Bias, MCSE of bias,
+mean absolute bias, RMSE, and empirical coverage in the fixed-parameter
+simulation. Coverage is based on equal-tailed 95\% credible intervals.}
+\label{tab:appFixedParameter}
+\centering
+\scriptsize
+\begin{tabular}{clrrrrr}
+\toprule
+$n$ & Parameter & Bias & Bias MCSE & Mean absolute bias & RMSE & Coverage \\
+\midrule
+600
+& $\beta_1$  & -0.0153 & 0.0070 & 0.1247 & 0.1577 & 0.962 \\
+& $\beta_2$   &  0.0059 & 0.0065 & 0.1160 & 0.1445 & 0.970 \\
+& $\beta_3$   &  0.0217 & 0.0085 & 0.1532 & 0.1920 & 0.956 \\
+& $\gamma_1$  & -0.0427 & 0.0104 & 0.1758 & 0.2370 & 0.946 \\
+& $\gamma_2$  & -0.0667 & 0.0111 & 0.1937 & 0.2577 & 0.960 \\
+\addlinespace
+800
+& $\beta_1$  & -0.0140 & 0.0065 & 0.1166 & 0.1461 & 0.938 \\
+& $\beta_2$   & -0.0063 & 0.0058 & 0.1041 & 0.1306 & 0.934 \\
+& $\beta_3$   &  0.0187 & 0.0077 & 0.1390 & 0.1724 & 0.962 \\
+& $\gamma_1$  & -0.0153 & 0.0093 & 0.1503 & 0.2092 & 0.934 \\
+& $\gamma_2$  & -0.0306 & 0.0098 & 0.1630 & 0.2213 & 0.942 \\
+\addlinespace
+1000
+& $\beta_1$  & -0.0025 & 0.0056 & 0.0994 & 0.1258 & 0.940 \\
+& $\beta_2$   &  0.0020 & 0.0050 & 0.0887 & 0.1110 & 0.956 \\
+& $\beta_3$   &  0.0095 & 0.0070 & 0.1245 & 0.1563 & 0.938 \\
+& $\gamma_1$  & -0.0137 & 0.0071 & 0.1190 & 0.1601 & 0.952 \\
+& $\gamma_2$  & -0.0134 & 0.0074 & 0.1219 & 0.1662 & 0.960 \\
+\addlinespace
+1200
+& $\beta_1$  &  0.0052 & 0.0049 & 0.0890 & 0.1107 & 0.964 \\
+& $\beta_2$   &  0.0009 & 0.0044 & 0.0781 & 0.0990 & 0.958 \\
+& $\beta_3$   & -0.0015 & 0.0059 & 0.1062 & 0.1326 & 0.960 \\
+& $\gamma_1$  & -0.0044 & 0.0063 & 0.1016 & 0.1415 & 0.954 \\
+& $\gamma_2$  & -0.0087 & 0.0069 & 0.1103 & 0.1552 & 0.958 \\
+\addlinespace
+1400
+& $\beta_1$  & -0.0002 & 0.0046 & 0.0825 & 0.1037 & 0.944 \\
+& $\beta_2$   & -0.0004 & 0.0040 & 0.0705 & 0.0883 & 0.952 \\
+& $\beta_3$   &  0.0019 & 0.0056 & 0.0994 & 0.1242 & 0.960 \\
+& $\gamma_1$  &  0.0033 & 0.0057 & 0.0926 & 0.1266 & 0.942 \\
+& $\gamma_2$  & -0.0057 & 0.0060 & 0.0945 & 0.1331 & 0.948 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+
+\subsubsection{Posterior summaries and convergence diagnostics}
+
+Table~\ref{tab:appPosteriorSummaries} reports posterior summaries and
+convergence diagnostics for the three-biomarker and pairwise analyses. All
+models used four chains, 50,000 burn-in iterations per chain, 50,000 retained
+draws per chain, thinning by 10, independent $N(0,1)$ priors for the
+components of $\boldsymbol\gamma$, and $\lambda=0$. Starting values are not
+reported as reference values because the true parameters are unknown in the
+observed data.
+
+\begin{table}[p]
+\caption[Posterior summaries for all biomarker models]{Posterior mean,
+posterior standard deviation, equal-tailed 95\% credible interval, split
+$\widehat R$, and effective sample size (ESS) for all fitted biomarker
+models.}
+\label{tab:appPosteriorSummaries}
+\centering
+\scriptsize
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llrrrrrr}
+\toprule
+Model & Parameter & Estimate & Posterior SD & Lower 95\% & Upper 95\% & Split $\widehat R$ & ESS \\
+\midrule
+HER2, CA19-9, Axl
+& $\beta_1$ & -0.670 & 0.726 & -1.998 & 0.778 & 1.005 & 1195 \\
+& $\beta_2$ &  0.026 & 0.543 & -0.529 & 0.702 & 1.003 & 1801 \\
+& $\beta_3$ &  0.548 & 0.768 & -1.093 & 1.864 & 1.006 & 1028 \\
+& $\gamma_{\mathrm{HER2}}$   & -0.176 & 0.565 & -1.058 & 1.191 & 1.006 & 686 \\
+& $\gamma_{\mathrm{CA19\mbox{-}9}}$ &  0.389 & 0.565 & -0.897 & 1.306 & 1.001 & 942 \\
+& $\gamma_{\mathrm{Axl}}$    & -0.648 & 0.684 & -1.936 & 0.936 & 1.005 & 589 \\
+\addlinespace
+HER2, CA19-9
+& $\beta_1$ &  0.076 & 0.783 & -1.344 & 1.487 & 1.003 & 1563 \\
+& $\beta_2$ &  0.238 & 0.499 & -0.737 & 1.041 & 1.002 & 3203 \\
+& $\beta_3$ & -0.305 & 0.836 & -1.743 & 1.224 & 1.003 & 1331 \\
+& $\gamma_{\mathrm{HER2}}$   & 0.480 & 0.711 & -0.770 & 1.821 & 1.008 & 665 \\
+& $\gamma_{\mathrm{CA19\mbox{-}9}}$ & 0.011 & 0.722 & -1.457 & 1.135 & 1.004 & 666 \\
+\addlinespace
+HER2, Axl
+& $\beta_1$ & -0.328 & 1.013 & -2.869 & 1.107 & 1.002 & 789 \\
+& $\beta_2$ &  0.109 & 0.702 & -2.110 & 0.963 & 1.003 & 1486 \\
+& $\beta_3$ &  0.120 & 1.070 & -1.418 & 2.691 & 1.002 & 704 \\
+& $\gamma_{\mathrm{HER2}}$   & 0.076 & 0.756 & -1.176 & 1.288 & 1.005 & 375 \\
+& $\gamma_{\mathrm{Axl}}$    & -0.149 & 0.682 & -1.323 & 1.226 & 1.006 & 470 \\
+\addlinespace
+CA19-9, Axl
+& $\beta_1$ & -0.859 & 0.986 & -4.211 & -0.004 & 1.008 & 1390 \\
+& $\beta_2$ & -0.115 & 1.006 & -4.322 & 0.573 & 1.010 & 903 \\
+& $\beta_3$ &  0.758 & 0.978 & -0.172 & 4.022 & 1.007 & 1464 \\
+& $\gamma_{\mathrm{CA19\mbox{-}9}}$ & 0.641 & 0.579 & -0.721 & 1.340 & 1.014 & 404 \\
+& $\gamma_{\mathrm{Axl}}$    & -0.921 & 0.615 & -2.080 & 0.347 & 1.011 & 595 \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\clearpage
+
+% FIGURE FILES NEEDED HERE: the convergence-traces.pdf and
+% convergence-autocorrelation.pdf files from
+% results/biomarker-mcmc-trial3/.
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{convergence-traces.pdf}
+\caption[Trace plots for the three-biomarker model]{Trace plots for the four
+MCMC chains in the model containing HER2, CA19-9, and Axl.}
+\label{fig:appConvergenceTraces}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{convergence-autocorrelation.pdf}
+\caption[Autocorrelation plots for the three-biomarker model]{Autocorrelation
+plots for the four MCMC chains in the model containing HER2, CA19-9, and Axl.}
+\label{fig:appConvergenceAutocorrelation}
+\end{figure}
+
+\clearpage
+
+\subsubsection{Biomarker scores and subgroup survival summaries}
+
+Table~\ref{tab:appScoreDefinitions} gives the posterior-mean scores used for
+the descriptive Kaplan--Meier and conventional Cox analyses. In every model,
+subjects with a score greater than or equal to zero were classified as
+index-positive.
+
+\begin{table}[!htbp]
+\caption[Posterior-mean biomarker scores]{Posterior-mean coefficients defining
+the fixed-threshold biomarker scores. Each score has the form
+$1+\mathbf z_i^{T}\widehat{\boldsymbol\gamma}$, and the index-positive group
+is defined by a score greater than or equal to zero.}
+\label{tab:appScoreDefinitions}
+\centering
+\scriptsize
+\resizebox{\textwidth}{!}{
+\begin{tabular}{ll}
+\toprule
+Model & Posterior-mean score \\
+\midrule
+HER2, CA19-9, Axl
+& $1-0.176\,\mathrm{HER2}+0.389\,\mathrm{CA19\mbox{-}9}-0.648\,\mathrm{Axl}$ \\
+HER2, CA19-9
+& $1+0.480\,\mathrm{HER2}+0.011\,\mathrm{CA19\mbox{-}9}$ \\
+HER2, Axl
+& $1+0.076\,\mathrm{HER2}-0.149\,\mathrm{Axl}$ \\
+CA19-9, Axl
+& $1+0.641\,\mathrm{CA19\mbox{-}9}-0.921\,\mathrm{Axl}$ \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+Table~\ref{tab:appGroupSummaries} reports the full treatment-by-subgroup
+counts and median survival times. The HER2/Axl posterior-mean score placed all
+569 subjects in the index-positive subgroup, so no index-negative rows exist
+for that model.
+
+\begin{table}[p]
+\caption[Complete treatment-by-subgroup summaries]{Numbers of subjects,
+events, censored observations, and Kaplan--Meier median survival times for
+each treatment-by-subgroup combination.}
+\label{tab:appGroupSummaries}
+\centering
+\scriptsize
+\begin{tabular}{llrrrr}
+\toprule
+Model & Group & $n$ & Events & Censored & Median survival \\
+\midrule
+HER2, CA19-9, Axl & Control / index-negative & 20 & 17 & 3 & 6.46 \\
+& Treated / index-negative & 21 & 15 & 6 & 8.31 \\
+& Control / index-positive & 264 & 230 & 34 & 5.91 \\
+& Treated / index-positive & 264 & 223 & 41 & 6.11 \\
+\addlinespace
+HER2, CA19-9 & Control / index-negative & 9 & 8 & 1 & 7.36 \\
+& Treated / index-negative & 9 & 9 & 0 & 4.24 \\
+& Control / index-positive & 275 & 239 & 36 & 5.91 \\
+& Treated / index-positive & 276 & 229 & 47 & 6.37 \\
+\addlinespace
+HER2, Axl & Control / index-positive & 284 & 247 & 37 & 5.91 \\
+& Treated / index-positive & 285 & 238 & 47 & 6.37 \\
+\addlinespace
+CA19-9, Axl & Control / index-negative & 33 & 28 & 5 & 5.65 \\
+& Treated / index-negative & 41 & 29 & 12 & 8.31 \\
+& Control / index-positive & 251 & 219 & 32 & 5.95 \\
+& Treated / index-positive & 244 & 209 & 35 & 6.08 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+
+Table~\ref{tab:appExploratoryTests} summarizes the exploratory log-rank and
+post-classification Cox analyses. The proportional-hazards global p-value is
+from the conventional Cox interaction model. These p-values condition on a
+score and subgroup assignment estimated from the same observations and do
+not account for uncertainty in $\boldsymbol\gamma$; they should not be
+interpreted as confirmatory tests.
+
+\begin{table}[p]
+\caption[Exploratory survival and interaction tests]{Exploratory log-rank and
+Cox interaction results using the posterior-mean subgroup definitions.
+``Below'' and ``above'' refer to treatment comparisons within the
+index-negative and index-positive groups, respectively.}
+\label{tab:appExploratoryTests}
+\centering
+\scriptsize
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lrrrrrrrr}
+\toprule
+& \multicolumn{3}{c}{Log-rank p-value}
+& \multicolumn{4}{c}{Cox treatment-by-subgroup interaction}
+& PH global p \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-8}
+Model & Four groups & Below & Above & HR & Lower 95\% & Upper 95\% & Wald p & \\
+\midrule
+HER2, CA19-9, Axl & 0.047 & 0.114 & 0.089 & 1.47 & 0.72 & 3.03 & 0.293 & 0.892 \\
+HER2, CA19-9      & 0.014 & 0.122 & 0.012 & 0.30 & 0.11 & 0.80 & 0.017 & 0.538 \\
+HER2, Axl         & 0.035 & ---   & 0.035 & ---  & ---  & ---  & ---   & --- \\
+CA19-9, Axl       & 0.007 & 0.010 & 0.284 & 1.77 & 1.01 & 3.08 & 0.045 & 0.861 \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\clearpage
+
+% FIGURE NEEDED HERE: the four-group Kaplan--Meier chart. The manuscript
+% filename supplied for this chart is km_four_groups.pdf.
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{km_four_groups.pdf}
+\caption[Kaplan--Meier curves for the three-biomarker groups]{Kaplan--Meier
+survival curves for the four treatment-by-subgroup groups defined using the
+posterior-mean HER2, CA19-9, and Axl score.}
+\label{fig:appKmFourGroups}
+\end{figure}
+
+\clearpage

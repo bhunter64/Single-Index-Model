@@ -1,0 +1,161 @@
+% Requires the booktabs and graphicx packages.
+\section{Simulation studies}
+\label{simuStudy}
+
+We conducted simulation analyses to assess the finite-sample performance of the proposed fixed-threshold single-index model with two biomarkers. We first examined the model over a grid of regression coefficients and sample sizes and then considered a fixed-parameter setting over a finer sequence of sample sizes to evaluate whether estimation error decreased as the amount of information increased. In contrast to the earlier formulation, no separate cut-point or angular parameter was estimated. The threshold was fixed at zero, and subgroup membership was determined directly by the single-index score. Accordingly, only the simulation experiments carried out for this revised formulation are reported below.
+
+For subject $i$, let $a_i$ denote the treatment indicator, let $\mathbf z_i=(z_{i1},z_{i2})^{T}$ denote the biomarker vector, and define
+\[
+    G_i(\boldsymbol\gamma)
+    = I\{1+\boldsymbol\gamma^{T}\mathbf z_i\geq 0\}.
+\]
+Time-to-event data were generated from an exponential proportional hazards model with hazard function
+\begin{equation}
+\label{eq:simModel}
+    h_i(t)
+    =
+    \exp\left\{
+        \beta_1 a_i
+        +\beta_2G_i(\boldsymbol\gamma)
+        +\beta_3a_iG_i(\boldsymbol\gamma)
+    \right\}.
+\end{equation}
+The baseline hazard was set to one. Each subject was independently assigned to the treatment group with probability $0.5$. The two biomarkers followed a bivariate normal distribution with mean zero, unit marginal variances, and correlation zero. The true biomarker coefficients were $\boldsymbol\gamma=(1.5,1.8)^{T}$, so the index-positive subgroup was defined by $1+1.5z_{i1}+1.8z_{i2}\geq0$. Independent administrative censoring times were generated from $U(0.4,3)$, and the observed time was the minimum of the event and censoring times. To avoid unstable fits caused by nearly empty treatment-by-subgroup cells, a simulated data set was retained only when each of the treated/index-positive, treated/index-negative, control/index-positive, and control/index-negative groups contained at least 60 subjects.
+
+In the regression-coefficient grid, we considered sample sizes $n=600$, $1000$, and $1400$. The overall treatment hazard ratio $\exp(\beta_1)$ took values 1 and 2, while the subgroup main-effect hazard ratio $\exp(\beta_2)$ and treatment-by-subgroup interaction hazard ratio $\exp(\beta_3)$ each took values 2.5 and 2.8. These choices produced 24 parameter combinations. The case $\exp(\beta_1)=1$, or equivalently $\beta_1=0$, was included to examine whether the biomarker-defined subgroup could be recovered in the absence of an overall treatment effect. Each parameter combination was evaluated using 500 successfully fitted data sets, obtained as 50 simulation jobs with 10 effective data sets per job. Across these scenarios, the mean censoring proportion ranged from 6.9\% to 10.1\%.
+
+We used the same estimation settings throughout the simulation studies. The components of $\boldsymbol\gamma$ were assigned independent $N(0.5,1)$ priors, the random-walk proposal standard deviation was 0.5, and no shrinkage penalty was imposed ($\lambda=0$). The chain was initialized at $\boldsymbol\gamma_0=(1,1.3)^{T}$, with $\boldsymbol\beta_0$ obtained from the corresponding Cox model. We discarded $B=10{,}000$ burn-in iterations and retained $R=20{,}000$ posterior draws after thinning by $TN=10$. Thus, each fitted chain used $210{,}000$ MCMC iterations. Posterior means were used as point estimates, and uncertainty was summarized using equal-tailed 95\% credible intervals. For each parameter, performance was evaluated using empirical bias, Monte Carlo standard error (MCSE) of the bias, mean absolute bias, root mean squared error (RMSE), and the empirical coverage probability of the 95\% credible interval.
+
+% FIGURE NEEDED: Create a two-panel figure from the beta-grid combined results for
+% exp(beta_1)=1, exp(beta_2)=2.5, and exp(beta_3)=2.5. The left panel should show
+% the distributions of the 500 posterior-mean estimates at n=600, and the right
+% panel should show the corresponding distributions at n=1400. Include vertical
+% lines at the true beta and gamma values. Faceting by parameter is recommended.
+\begin{figure}[!htbp]
+    \centering
+    \fbox{\parbox{0.92\textwidth}{\centering
+    \textbf{FIGURE NEEDED:} Distributions of the posterior-mean estimates of
+    $\boldsymbol\beta$ and $\boldsymbol\gamma$ across 500 simulations for
+    $\exp(\beta_1)=1$, $\exp(\beta_2)=2.5$, and $\exp(\beta_3)=2.5$, comparing
+    $n=600$ with $n=1400$. Add vertical lines at the true parameter values.}}
+    \caption[Exemplary distributions of the parameter estimates across simulation replications]{Exemplary distributions of the posterior-mean parameter estimates across 500 simulation replications for $\boldsymbol\gamma=(1.5,1.8)^{T}$, $\exp(\beta_1)=1$, $\exp(\beta_2)=2.5$, and $\exp(\beta_3)=2.5$. The left and right panels correspond to $n=600$ and $n=1400$, respectively.}
+    \label{fig:simuEstimateHist}
+\end{figure}
+
+Table~\ref{tab:simuResBetaGrid} summarizes the empirical bias and coverage probability for all 24 combinations. The signed biases were small throughout, ranging from $-0.004$ to $0.014$ across all five parameters and all scenarios. The empirical coverage probabilities ranged from 0.930 to 0.966 and were therefore close to the nominal 95\% level. All 500 data sets in each grid scenario were fitted successfully. The results with $\exp(\beta_1)=1$ were comparable to those with $\exp(\beta_1)=2$, indicating that the model can estimate the biomarker-defined subgroup coefficients even when there is no overall treatment effect.
+
+\begin{table}[!htbp]
+\caption[Simulation results for the 24 regression-coefficient and sample-size combinations]{Simulation results for the 24 regression-coefficient and sample-size combinations. The true biomarker coefficients were $\boldsymbol\gamma=(1.5,1.8)^{T}$. Each combination was evaluated using 500 successfully fitted data sets. Columns 2--4 display the true hazard ratios, columns 5--9 present the empirical biases, and columns 10--14 present empirical coverage probabilities based on equal-tailed 95\% credible intervals.}
+\scriptsize
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tabular}{ccccrrrrrrrrrr}
+\toprule
+& \multicolumn{3}{c}{True hazard ratios}
+& \multicolumn{5}{c}{Empirical bias}
+& \multicolumn{5}{c}{Coverage probability} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-9}\cmidrule(lr){10-14}
+$n$ & $\exp(\beta_1)$ & $\exp(\beta_2)$ & $\exp(\beta_3)$
+& $\hat\beta_1$ & $\hat\beta_2$ & $\hat\beta_3$ & $\hat\gamma_1$ & $\hat\gamma_2$
+& $\hat\beta_1$ & $\hat\beta_2$ & $\hat\beta_3$ & $\hat\gamma_1$ & $\hat\gamma_2$ \\
+\midrule
+600  & 1.0 & 2.5 & 2.5 & 0.006 & 0.013 & -0.002 & 0.001 & 0.003 & 0.960 & 0.946 & 0.964 & 0.938 & 0.948 \\
+600  & 1.0 & 2.5 & 2.8 & 0.005 & 0.012 &  0.000 & 0.002 & 0.003 & 0.960 & 0.950 & 0.960 & 0.932 & 0.946 \\
+600  & 1.0 & 2.8 & 2.5 & 0.002 & 0.011 &  0.001 & 0.001 & 0.002 & 0.958 & 0.940 & 0.962 & 0.936 & 0.944 \\
+600  & 1.0 & 2.8 & 2.8 & 0.005 & 0.013 &  0.000 & 0.001 & 0.001 & 0.960 & 0.946 & 0.960 & 0.938 & 0.934 \\
+600  & 2.0 & 2.5 & 2.5 & 0.011 & 0.013 & -0.004 & 0.002 & 0.004 & 0.962 & 0.942 & 0.964 & 0.938 & 0.942 \\
+600  & 2.0 & 2.5 & 2.8 & 0.011 & 0.013 & -0.003 & 0.002 & 0.003 & 0.962 & 0.946 & 0.966 & 0.932 & 0.940 \\
+600  & 2.0 & 2.8 & 2.5 & 0.011 & 0.014 & -0.004 & 0.002 & 0.003 & 0.958 & 0.946 & 0.962 & 0.942 & 0.936 \\
+600  & 2.0 & 2.8 & 2.8 & 0.011 & 0.014 & -0.003 & 0.001 & 0.002 & 0.958 & 0.948 & 0.962 & 0.938 & 0.930 \\
+\addlinespace
+1000 & 1.0 & 2.5 & 2.5 & 0.000 & 0.005 & 0.008 &  0.000 & 0.001 & 0.946 & 0.960 & 0.934 & 0.950 & 0.956 \\
+1000 & 1.0 & 2.5 & 2.8 & 0.000 & 0.005 & 0.009 &  0.000 & 0.001 & 0.946 & 0.960 & 0.936 & 0.950 & 0.960 \\
+1000 & 1.0 & 2.8 & 2.5 & 0.000 & 0.005 & 0.008 &  0.000 & 0.002 & 0.946 & 0.954 & 0.934 & 0.946 & 0.962 \\
+1000 & 1.0 & 2.8 & 2.8 & 0.000 & 0.005 & 0.009 &  0.000 & 0.002 & 0.946 & 0.956 & 0.934 & 0.954 & 0.962 \\
+1000 & 2.0 & 2.5 & 2.5 & 0.002 & 0.004 & 0.008 & -0.001 & 0.000 & 0.936 & 0.958 & 0.944 & 0.950 & 0.956 \\
+1000 & 2.0 & 2.5 & 2.8 & 0.002 & 0.004 & 0.009 &  0.000 & 0.001 & 0.938 & 0.958 & 0.942 & 0.954 & 0.958 \\
+1000 & 2.0 & 2.8 & 2.5 & 0.002 & 0.004 & 0.008 &  0.000 & 0.001 & 0.938 & 0.958 & 0.944 & 0.952 & 0.960 \\
+1000 & 2.0 & 2.8 & 2.8 & 0.002 & 0.004 & 0.009 &  0.000 & 0.002 & 0.934 & 0.954 & 0.942 & 0.954 & 0.964 \\
+\addlinespace
+1400 & 1.0 & 2.5 & 2.5 & -0.001 & 0.001 & 0.003 & 0.001 & -0.001 & 0.954 & 0.948 & 0.948 & 0.942 & 0.948 \\
+1400 & 1.0 & 2.5 & 2.8 & -0.001 & 0.001 & 0.003 & 0.001 & -0.001 & 0.954 & 0.950 & 0.950 & 0.944 & 0.952 \\
+1400 & 1.0 & 2.8 & 2.5 & -0.001 & 0.002 & 0.002 & 0.001 &  0.000 & 0.954 & 0.954 & 0.952 & 0.946 & 0.942 \\
+1400 & 1.0 & 2.8 & 2.8 & -0.001 & 0.002 & 0.003 & 0.001 &  0.000 & 0.954 & 0.954 & 0.948 & 0.946 & 0.942 \\
+1400 & 2.0 & 2.5 & 2.5 &  0.002 & 0.001 & 0.002 & 0.001 & -0.001 & 0.952 & 0.944 & 0.952 & 0.940 & 0.946 \\
+1400 & 2.0 & 2.5 & 2.8 &  0.002 & 0.001 & 0.002 & 0.001 & -0.001 & 0.954 & 0.942 & 0.958 & 0.946 & 0.950 \\
+1400 & 2.0 & 2.8 & 2.5 &  0.002 & 0.002 & 0.002 & 0.001 & -0.001 & 0.956 & 0.952 & 0.954 & 0.940 & 0.938 \\
+1400 & 2.0 & 2.8 & 2.8 &  0.002 & 0.001 & 0.002 & 0.001 &  0.000 & 0.956 & 0.952 & 0.960 & 0.946 & 0.946 \\
+\bottomrule
+\end{tabular}}
+\label{tab:simuResBetaGrid}
+\end{table}
+
+Although signed bias was already close to zero, estimation precision improved as the sample size increased. Averaged over the eight coefficient combinations at each sample size, the mean absolute biases of $(\hat\beta_1,\hat\beta_2,\hat\beta_3)$ decreased from $(0.123,0.114,0.151)$ at $n=600$ to $(0.084,0.071,0.102)$ at $n=1400$. The corresponding mean absolute biases of $(\hat\gamma_1,\hat\gamma_2)$ decreased more sharply, from $(0.049,0.053)$ to $(0.019,0.022)$. The RMSEs followed the same pattern. Differences among the four combinations of $\exp(\beta_2)$ and $\exp(\beta_3)$ were modest, and there was no evidence that interchanging 2.5 and 2.8 materially changed estimator performance.
+
+We next fixed $\boldsymbol\beta=(\log(1.5),\log(1.2),\log(2))^{T}$ and $\boldsymbol\gamma=(1.5,1.8)^{T}$ and considered $n=600$, $800$, $1000$, $1200$, and $1400$. As above, 500 successfully fitted data sets were retained at each sample size. At $n=600$, 500 successful fits were obtained from 524 attempts, for a successful-fit rate of 95.4\%; the mean censoring proportion was 13.3\%. At $n=800$, 500 successful fits were obtained from 501 attempts, for a rate of 99.8\%, and all 500 fits were successful on their first recorded attempt for $n\geq1000$.
+
+Table~\ref{tab:simuResFixedN} shows a clear reduction in estimation error with increasing sample size. From $n=600$ to $n=1400$, mean absolute bias decreased from 0.125 to 0.083 for $\hat\beta_1$, from 0.116 to 0.071 for $\hat\beta_2$, and from 0.153 to 0.099 for $\hat\beta_3$. The improvement was particularly marked for the biomarker coefficients: mean absolute bias decreased from 0.176 to 0.093 for $\hat\gamma_1$ and from 0.194 to 0.095 for $\hat\gamma_2$. The RMSE decreased in parallel for all five parameters. Empirical coverage remained stable, ranging from 0.934 to 0.970 across the full study, with no systematic loss of coverage at larger sample sizes. These results indicate that the revised fixed-threshold formulation provides increasingly concentrated estimates while retaining approximately nominal interval coverage.
+
+\begin{table}[!htbp]
+\caption[Fixed-parameter simulation results across five sample sizes]{Fixed-parameter simulation results for $\boldsymbol\beta=(\log(1.5),\log(1.2),\log(2))^{T}$ and $\boldsymbol\gamma=(1.5,1.8)^{T}$. Each sample size was evaluated using 500 successfully fitted data sets. Bias MCSE denotes the Monte Carlo standard error of the empirical bias, and coverage is based on equal-tailed 95\% credible intervals.}
+\scriptsize
+\centering
+\begin{tabular}{clrrrrr}
+\toprule
+$n$ & Parameter & Bias & Bias MCSE & Absolute bias & RMSE & Coverage \\
+\midrule
+600
+& $\beta_1$  & -0.0153 & 0.0070 & 0.1247 & 0.1577 & 0.962 \\
+& $\beta_2$   &  0.0059 & 0.0065 & 0.1160 & 0.1445 & 0.970 \\
+& $\beta_3$   &  0.0217 & 0.0085 & 0.1532 & 0.1920 & 0.956 \\
+& $\gamma_1$  & -0.0427 & 0.0104 & 0.1758 & 0.2370 & 0.946 \\
+& $\gamma_2$  & -0.0667 & 0.0111 & 0.1937 & 0.2577 & 0.960 \\
+\addlinespace
+800
+& $\beta_1$  & -0.0140 & 0.0065 & 0.1166 & 0.1461 & 0.938 \\
+& $\beta_2$   & -0.0063 & 0.0058 & 0.1041 & 0.1306 & 0.934 \\
+& $\beta_3$   &  0.0187 & 0.0077 & 0.1390 & 0.1724 & 0.962 \\
+& $\gamma_1$  & -0.0153 & 0.0093 & 0.1503 & 0.2092 & 0.934 \\
+& $\gamma_2$  & -0.0306 & 0.0098 & 0.1630 & 0.2213 & 0.942 \\
+\addlinespace
+1000
+& $\beta_1$  & -0.0025 & 0.0056 & 0.0994 & 0.1258 & 0.940 \\
+& $\beta_2$   &  0.0020 & 0.0050 & 0.0887 & 0.1110 & 0.956 \\
+& $\beta_3$   &  0.0095 & 0.0070 & 0.1245 & 0.1563 & 0.938 \\
+& $\gamma_1$  & -0.0137 & 0.0071 & 0.1190 & 0.1601 & 0.952 \\
+& $\gamma_2$  & -0.0134 & 0.0074 & 0.1219 & 0.1662 & 0.960 \\
+\addlinespace
+1200
+& $\beta_1$  &  0.0052 & 0.0049 & 0.0890 & 0.1107 & 0.964 \\
+& $\beta_2$   &  0.0009 & 0.0044 & 0.0781 & 0.0990 & 0.958 \\
+& $\beta_3$   & -0.0015 & 0.0059 & 0.1062 & 0.1326 & 0.960 \\
+& $\gamma_1$  & -0.0044 & 0.0063 & 0.1016 & 0.1415 & 0.954 \\
+& $\gamma_2$  & -0.0087 & 0.0069 & 0.1103 & 0.1552 & 0.958 \\
+\addlinespace
+1400
+& $\beta_1$  & -0.0002 & 0.0046 & 0.0825 & 0.1037 & 0.944 \\
+& $\beta_2$   & -0.0004 & 0.0040 & 0.0705 & 0.0883 & 0.952 \\
+& $\beta_3$   &  0.0019 & 0.0056 & 0.0994 & 0.1242 & 0.960 \\
+& $\gamma_1$  &  0.0033 & 0.0057 & 0.0926 & 0.1266 & 0.942 \\
+& $\gamma_2$  & -0.0057 & 0.0060 & 0.0945 & 0.1331 & 0.948 \\
+\bottomrule
+\end{tabular}
+\label{tab:simuResFixedN}
+\end{table}
+
+% FIGURE NEEDED: Using the fixed-parameter values in Table~\ref{tab:simuResFixedN},
+% make a two-panel line plot over n=600,800,1000,1200,1400. Panel A should show
+% mean absolute bias and Panel B should show RMSE. Draw one line for each of
+% beta_1, beta_2, beta_3, gamma_1, and gamma_2.
+\begin{figure}[!htbp]
+    \centering
+    \fbox{\parbox{0.92\textwidth}{\centering
+    \textbf{FIGURE NEEDED:} Two-panel line plot for the fixed-parameter study.
+    Plot mean absolute bias against sample size in the left panel and RMSE
+    against sample size in the right panel, with separate lines for
+    $\beta_1$, $\beta_2$, $\beta_3$, $\gamma_1$, and $\gamma_2$.}}
+    \caption[Estimation error by sample size in the fixed-parameter simulation]{Mean absolute bias and RMSE by sample size in the fixed-parameter simulation with $\boldsymbol\beta=(\log(1.5),\log(1.2),\log(2))^{T}$ and $\boldsymbol\gamma=(1.5,1.8)^{T}$.}
+    \label{fig:simuBiasByN}
+\end{figure}
+
+Taken together, the two simulation experiments support the finite-sample performance of the revised estimation procedure. Across a range of overall treatment, subgroup, and interaction effects, point estimates exhibited little systematic bias and interval estimates maintained coverage close to 95\%. Under fixed parameter values, both mean absolute bias and RMSE decreased steadily as the sample size increased, including for the biomarker coefficients that determine subgroup membership.

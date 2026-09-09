@@ -2,7 +2,7 @@
 % Please edit documentation in R/single_index_utils.R
 \name{draw_gamma}
 \alias{draw_gamma}
-\title{Draw gamma from prior distribution.}
+\title{Draw gamma from a normal prior distribution.}
 \usage{
 draw_gamma(n_biomarkers, mean = 0, sd = 0.1)
 }
@@ -17,5 +17,5 @@ draw_gamma(n_biomarkers, mean = 0, sd = 0.1)
 A numeric gamma vector.
 }
 \description{
-Draw gamma from prior distribution.
+Draw gamma from a normal prior distribution.
 }

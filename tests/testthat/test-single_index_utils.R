@@ -68,6 +68,30 @@ test_that("gamma prior and proposal helpers have expected dimensions", {
   expect_equal(proposal, c(1, 2, 3))
 })
 
+test_that("uniform gamma prior helpers draw within bounds and evaluate support", {
+  set.seed(1002)
+  gamma <- draw_gamma_uniform(
+    3,
+    min = c(-2, 0, 4),
+    max = c(-1, 1, 5)
+  )
+
+  expect_length(gamma, 3)
+  expect_true(all(gamma >= c(-2, 0, 4)))
+  expect_true(all(gamma <= c(-1, 1, 5)))
+  expect_equal(
+    log_gamma_uniform_prior(c(-1.5, 0.5), min = c(-2, 0), max = c(0, 1)),
+    sum(stats::dunif(c(-1.5, 0.5), min = c(-2, 0), max = c(0, 1), log = TRUE))
+  )
+  expect_equal(log_gamma_uniform_prior(c(-3, 0.5), min = -2, max = 1), -Inf)
+})
+
+test_that("uniform gamma prior helpers validate bounds", {
+  expect_error(draw_gamma_uniform(2, min = 1, max = 1), "less than")
+  expect_error(log_gamma_uniform_prior(c(0, 1), min = -Inf, max = 2), "finite")
+  expect_error(draw_gamma_uniform(2, min = c(-1, 0, 1), max = 2), "length")
+})
+
 test_that("distribution helper lengths are checked", {
   expect_equal(singleIndexModel:::repeat_parameter(2, 3), c(2, 2, 2))
   expect_equal(singleIndexModel:::repeat_parameter(c(1, 2), 2), c(1, 2))

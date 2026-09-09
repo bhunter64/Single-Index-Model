@@ -12,7 +12,8 @@ mcmc_step(
   control,
   lambda = 0,
   treatment_col = 1,
-  biomarker_cols = NULL
+  biomarker_cols = NULL,
+  gamma_prior = NULL
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ columns.}
 \item{treatment_col}{Column name or index for the treatment indicator.}
 
 \item{biomarker_cols}{Optional column names or indices for biomarkers.}
+
+\item{gamma_prior}{Optional gamma prior override, either \code{"normal"} or
+\code{"uniform"}. When omitted, \code{control$gamma_prior} is used.}
 }
 \value{
 A list containing updated \code{beta}, \code{gamma}, and \code{log_likelihood}.

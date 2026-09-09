@@ -89,7 +89,7 @@ resolve_biomarker_columns <- function(x, treatment_col = 1, biomarker_cols = NUL
   return(biomarker_cols)
 }
 
-#' Draw gamma from prior distribution.
+#' Draw gamma from a normal prior distribution.
 #'
 #' @param n_biomarkers Number of biomarker coefficients (=gamma components) to draw.
 #' @param mean Mean vector (or scalar if identical) for the normal prior.
@@ -101,7 +101,20 @@ draw_gamma <- function(n_biomarkers, mean = 0, sd = 0.1) {
   stats::rnorm(n_biomarkers, mean = repeat_parameter(mean, n_biomarkers), sd = repeat_parameter(sd, n_biomarkers))
 }
 
-#' Evaluate the gamma prior density.
+#' Draw gamma from a uniform prior distribution.
+#'
+#' @param n_biomarkers Number of biomarker coefficients (=gamma components) to draw.
+#' @param min Lower bound vector (or scalar if identical) for the uniform prior.
+#' @param max Upper bound vector (or scalar if identical) for the uniform prior.
+#'
+#' @return A numeric gamma vector.
+#' @export
+draw_gamma_uniform <- function(n_biomarkers, min = -1, max = 1) {
+  bounds <- validate_uniform_bounds(min, max, n_biomarkers)
+  stats::runif(n_biomarkers, min = bounds$min, max = bounds$max)
+}
+
+#' Evaluate the normal gamma prior density.
 #'
 #' @param gamma A vector of biomarker coefficients.
 #' @param mean Mean vector (or scalar if identical) for the normal prior.
@@ -111,6 +124,23 @@ draw_gamma <- function(n_biomarkers, mean = 0, sd = 0.1) {
 #' @export
 log_gamma_prior <- function(gamma, mean = 0, sd = 0.1) {
   sum(stats::dnorm(gamma, mean = repeat_parameter(mean, length(gamma)), sd = repeat_parameter(sd, length(gamma)), log = TRUE))
+}
+
+#' Evaluate the uniform gamma prior density.
+#'
+#' Each gamma component has an independent uniform prior. Values outside any
+#' component's bounds have log density `-Inf` and are therefore rejected by the
+#' Metropolis-Hastings update.
+#'
+#' @param gamma A vector of biomarker coefficients.
+#' @param min Lower bound vector (or scalar if identical) for the uniform prior.
+#' @param max Upper bound vector (or scalar if identical) for the uniform prior.
+#'
+#' @return The log prior density.
+#' @export
+log_gamma_uniform_prior <- function(gamma, min = -1, max = 1) {
+  bounds <- validate_uniform_bounds(min, max, length(gamma))
+  sum(stats::dunif(gamma, min = bounds$min, max = bounds$max, log = TRUE))
 }
 
 #' Propose an updated gamma vector.
@@ -165,4 +195,26 @@ repeat_parameter <- function(value, n) {
     stop("distribution parameter length must be 1 or match gamma length", call. = FALSE)
   }
   value
+}
+
+#' Validate component-wise uniform distribution bounds.
+#'
+#' @param min Lower bound vector or scalar.
+#' @param max Upper bound vector or scalar.
+#' @param n Required bounds length.
+#'
+#' @return A list with expanded `min` and `max` vectors.
+#' @keywords internal
+validate_uniform_bounds <- function(min, max, n) {
+  min <- repeat_parameter(min, n)
+  max <- repeat_parameter(max, n)
+
+  if (anyNA(min) || anyNA(max) || any(!is.finite(min)) || any(!is.finite(max))) {
+    stop("uniform gamma prior bounds must be finite", call. = FALSE)
+  }
+  if (any(min >= max)) {
+    stop("each uniform gamma prior minimum must be less than its maximum", call. = FALSE)
+  }
+
+  list(min = min, max = max)
 }

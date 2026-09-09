@@ -13,7 +13,8 @@ fit_threshold_model(
   status_col = "status",
   treatment_col = "treatment",
   biomarker_cols = NULL,
-  beta_start = NULL
+  beta_start = NULL,
+  gamma_prior = NULL
 )
 }
 \arguments{
@@ -37,6 +38,9 @@ biomarker columns.}
 \item{beta_start}{Optional initial three-vector for the treatment, subgroup,
 and treatment-by-subgroup coefficients. When omitted, the coefficients are
 initialized from a Cox model at \code{gamma_start}.}
+
+\item{gamma_prior}{Optional gamma prior override, either \code{"normal"} or
+\code{"uniform"}. When omitted, \code{control$gamma_prior} is used.}
 }
 \value{
 Posterior samples from \code{fit_threshold_mcmc()}.

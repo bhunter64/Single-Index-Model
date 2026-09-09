@@ -1,0 +1,2 @@
+"data_file","data_object","observations_used","incomplete_rows_removed","events","treated","chains","workers","retained_samples_per_chain","burn_in","thin","seed","lambda"
+"/home/braydon/SingleIndexModel/data/cleaned_data.rda","cleaned_data",569,0,485,285,4,4,50000,50000,10,20261818,0

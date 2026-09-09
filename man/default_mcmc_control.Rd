@@ -10,7 +10,10 @@ default_mcmc_control(
   thin = 10,
   gamma_mean = 0,
   gamma_sd = 0.1,
-  gamma_proposal_sd = 0.05
+  gamma_proposal_sd = 0.05,
+  gamma_prior = c("normal", "uniform"),
+  gamma_min = -1,
+  gamma_max = 1
 )
 }
 \arguments{
@@ -26,6 +29,13 @@ default_mcmc_control(
 prior.}
 
 \item{gamma_proposal_sd}{Random-walk proposal standard deviation for gamma.}
+
+\item{gamma_prior}{Gamma prior distribution, either \code{"normal"} or
+\code{"uniform"}.}
+
+\item{gamma_min}{Lower bound vector or scalar for the uniform gamma prior.}
+
+\item{gamma_max}{Upper bound vector or scalar for the uniform gamma prior.}
 }
 \value{
 A named list of MCMC controls.

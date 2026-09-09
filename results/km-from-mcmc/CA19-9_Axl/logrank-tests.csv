@@ -1,0 +1,4 @@
+"comparison","n","groups","chisq","df","p_value"
+"Four treatment-by-subgroup groups",569,4,12.0262385939108,3,0.00729381650732099
+"Treatment within below-threshold subgroup",74,2,6.62313226668948,1,0.0100662646036985
+"Treatment within above-threshold subgroup",495,2,1.14828178214793,1,0.283909121805598

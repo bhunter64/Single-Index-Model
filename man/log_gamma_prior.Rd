@@ -2,7 +2,7 @@
 % Please edit documentation in R/single_index_utils.R
 \name{log_gamma_prior}
 \alias{log_gamma_prior}
-\title{Evaluate the gamma prior density.}
+\title{Evaluate the normal gamma prior density.}
 \usage{
 log_gamma_prior(gamma, mean = 0, sd = 0.1)
 }
@@ -17,5 +17,5 @@ log_gamma_prior(gamma, mean = 0, sd = 0.1)
 The log prior density.
 }
 \description{
-Evaluate the gamma prior density.
+Evaluate the normal gamma prior density.
 }

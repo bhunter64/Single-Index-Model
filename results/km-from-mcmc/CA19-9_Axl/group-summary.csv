@@ -1,0 +1,5 @@
+"group","n","events","censored","median_time"
+"Control / Below threshold",33,28,5,5.6509
+"Treated / Below threshold",41,29,12,8.3121
+"Control / Above threshold",251,219,32,5.9466
+"Treated / Above threshold",244,209,35,6.078

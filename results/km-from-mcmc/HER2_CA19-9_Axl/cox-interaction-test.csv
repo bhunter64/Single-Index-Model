@@ -1,0 +1,2 @@
+"interaction_estimable","beta3_estimate","beta3_standard_error","beta3_hazard_ratio","beta3_hr_95_lower","beta3_hr_95_upper","beta3_wald_z","beta3_wald_p","interaction_likelihood_ratio_p","proportional_hazards_global_p"
+TRUE,0.38678978763933,0.36768227261873,1.47224697423018,0.716158172971758,3.02658160575847,1.05196746333325,0.292814477672078,0.292319701739241,0.892219437815811
