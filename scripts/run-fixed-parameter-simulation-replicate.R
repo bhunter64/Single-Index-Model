@@ -13,6 +13,9 @@ parse_args <- function(args) {
     true_beta_1 = as.character(log(1.5)),
     true_beta_2 = as.character(log(1.2)),
     true_beta_3 = as.character(log(2)),
+    gamma_prior = "normal",
+    gamma_min = "-1",
+    gamma_max = "1",
     scenario_label = NA_character_
   )
 
@@ -31,6 +34,9 @@ parse_args <- function(args) {
       "--true-beta-1",
       "--true-beta-2",
       "--true-beta-3",
+      "--gamma-prior",
+      "--gamma-min",
+      "--gamma-max",
       "--scenario-label"
     )) {
       key <- gsub("-", "_", sub("^--", "", arg))
@@ -51,6 +57,12 @@ parse_args <- function(args) {
   values$true_beta_1 <- as.numeric(values$true_beta_1)
   values$true_beta_2 <- as.numeric(values$true_beta_2)
   values$true_beta_3 <- as.numeric(values$true_beta_3)
+  values$gamma_prior <- match.arg(values$gamma_prior, c("normal", "uniform"))
+  values$gamma_min <- as.numeric(strsplit(values$gamma_min, ",", fixed = TRUE)[[1]])
+  values$gamma_max <- as.numeric(strsplit(values$gamma_max, ",", fixed = TRUE)[[1]])
+  if (anyNA(values$gamma_min) || anyNA(values$gamma_max)) {
+    stop("--gamma-min and --gamma-max must be numeric scalars or comma-separated vectors", call. = FALSE)
+  }
   if (is.na(values$output_dir)) {
     values$output_dir <- sprintf("results/fixed-parameter-simulation-n%d", values$data_n)
   }
@@ -78,6 +90,8 @@ min_group_size <- 60
 true_beta <- c(args$true_beta_1, args$true_beta_2, args$true_beta_3)
 true_gamma <- c(1.5, 1.8)
 gamma_start_values <- c(1, 1.3)
+gamma_min_values <- repeat_parameter(args$gamma_min, length(true_gamma))
+gamma_max_values <- repeat_parameter(args$gamma_max, length(true_gamma))
 
 control <- default_mcmc_control(
   samples = args$samples,
@@ -85,7 +99,10 @@ control <- default_mcmc_control(
   thin = args$thin,
   gamma_mean = c(0.5, 0.5),
   gamma_sd = 1,
-  gamma_proposal_sd = 0.5
+  gamma_proposal_sd = 0.5,
+  gamma_prior = args$gamma_prior,
+  gamma_min = gamma_min_values,
+  gamma_max = gamma_max_values
 )
 
 simulate_from_true_parameters <- function(true_beta, true_gamma) {
@@ -223,6 +240,13 @@ base_result_columns <- function(replicate_index,
     true_beta_3 = true_beta[3],
     true_gamma_1 = true_gamma[1],
     true_gamma_2 = true_gamma[2],
+    gamma_prior = args$gamma_prior,
+    gamma_min_1 = gamma_min_values[1],
+    gamma_min_2 = gamma_min_values[2],
+    gamma_max_1 = gamma_max_values[1],
+    gamma_max_2 = gamma_max_values[2],
+    gamma_proposal_sd_1 = repeat_parameter(control$gamma_proposal_sd, length(true_gamma))[1],
+    gamma_proposal_sd_2 = repeat_parameter(control$gamma_proposal_sd, length(true_gamma))[2],
     gamma_start_1 = gamma_start[1],
     gamma_start_2 = gamma_start[2],
     censoring_proportion = data_summary$overall_censoring,
@@ -277,7 +301,8 @@ fit_one_data_set <- function(replicate_index, data_set_index, data_set_attempt, 
         data = data,
         control = control,
         lambda = 0,
-        gamma_start = gamma_start
+        gamma_start = gamma_start,
+        gamma_prior = args$gamma_prior
       ))
       summary <- summarize_mcmc(posterior)
 
