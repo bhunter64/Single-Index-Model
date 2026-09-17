@@ -28,7 +28,9 @@ default_mcmc_control(
 \item{gamma_sd}{Standard deviation vector or scalar for the normal gamma
 prior.}
 
-\item{gamma_proposal_sd}{Random-walk proposal standard deviation for gamma.}
+\item{gamma_proposal_sd}{Random-walk proposal standard deviation for gamma.
+With a uniform gamma prior, the proposal is a symmetric uniform
+distribution centered on the current gamma value.}
 
 \item{gamma_prior}{Gamma prior distribution, either \code{"normal"} or
 \code{"uniform"}.}

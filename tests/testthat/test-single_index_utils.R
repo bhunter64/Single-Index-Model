@@ -92,6 +92,21 @@ test_that("uniform gamma prior helpers validate bounds", {
   expect_error(draw_gamma_uniform(2, min = c(-1, 0, 1), max = 2), "length")
 })
 
+test_that("uniform gamma proposals are centered on the current chain value", {
+  set.seed(1003)
+  current_gamma <- 1.5
+  proposal_sd <- 0.2
+  proposals <- replicate(
+    20000,
+    propose_gamma_uniform(current_gamma, proposal_sd = proposal_sd)
+  )
+
+  expect_equal(mean(proposals), current_gamma, tolerance = 0.01)
+  expect_equal(stats::sd(proposals), proposal_sd, tolerance = 0.01)
+  expect_equal(propose_gamma_uniform(c(1, 2), proposal_sd = 0), c(1, 2))
+  expect_error(propose_gamma_uniform(1, proposal_sd = -0.1), "nonnegative")
+})
+
 test_that("distribution helper lengths are checked", {
   expect_equal(singleIndexModel:::repeat_parameter(2, 3), c(2, 2, 2))
   expect_equal(singleIndexModel:::repeat_parameter(c(1, 2), 2), c(1, 2))

@@ -7,6 +7,8 @@
 #' @param gamma_sd Standard deviation vector or scalar for the normal gamma
 #'   prior.
 #' @param gamma_proposal_sd Random-walk proposal standard deviation for gamma.
+#'   With a uniform gamma prior, the proposal is a symmetric uniform
+#'   distribution centered on the current gamma value.
 #' @param gamma_prior Gamma prior distribution, either `"normal"` or
 #'   `"uniform"`.
 #' @param gamma_min Lower bound vector or scalar for the uniform gamma prior.
@@ -104,11 +106,17 @@ mcmc_step <- function(x,
 
     # Copy gamma for the new candidate an replace the current index with one step
     candidate_gamma <- gamma
-    candidate_gamma[gamma_index] <- stats::rnorm(
-      1,
-      mean = gamma[gamma_index],
-      sd = gamma_proposal_sd[gamma_index]
-    )
+    candidate_gamma[gamma_index] <- if (control$gamma_prior == "uniform") {
+      propose_gamma_uniform(
+        gamma[gamma_index],
+        proposal_sd = gamma_proposal_sd[gamma_index]
+      )
+    } else {
+      propose_gamma(
+        gamma[gamma_index],
+        proposal_sd = gamma_proposal_sd[gamma_index]
+      )
+    }
     candidate_gamma_log_prior <- gamma_log_prior(candidate_gamma)
     if (is.finite(candidate_gamma_log_prior)) {
       candidate_log_likelihood <- cox_threshold_loglik(

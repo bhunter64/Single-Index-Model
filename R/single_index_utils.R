@@ -154,6 +154,32 @@ propose_gamma <- function(gamma, proposal_sd = 0.05) {
   stats::rnorm(length(gamma), mean = gamma, sd = repeat_parameter(proposal_sd, length(gamma)))
 }
 
+#' Propose an updated gamma vector with a uniform random walk.
+#'
+#' The proposal for each component is symmetric and centered on its current
+#' gamma value, so its mean is the most recently accepted value in the chain.
+#' The interval half-width is `sqrt(3) * proposal_sd`, which makes
+#' `proposal_sd` the actual standard deviation of the uniform proposal.
+#'
+#' @param gamma Current gamma vector.
+#' @param proposal_sd Random-walk proposal standard deviation.
+#'
+#' @return A proposed gamma vector.
+#' @export
+propose_gamma_uniform <- function(gamma, proposal_sd = 0.05) {
+  proposal_sd <- repeat_parameter(proposal_sd, length(gamma))
+  if (anyNA(proposal_sd) || any(!is.finite(proposal_sd)) || any(proposal_sd < 0)) {
+    stop("gamma proposal standard deviations must be finite and nonnegative", call. = FALSE)
+  }
+
+  half_width <- sqrt(3) * proposal_sd
+  stats::runif(
+    length(gamma),
+    min = gamma - half_width,
+    max = gamma + half_width
+  )
+}
+
 #' Match requested columns to numeric indices.
 #'
 #' @param x A data frame or matrix.
